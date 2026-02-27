@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMG Web App Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap");
+
+    body {
+      font-family: "Sarabun", sans-serif;
+      background-color: #f8fafc;
+    }
+
+    .sidebar-item.active {
+      background-color: #1e40af;
+      color: white;
+      border-right: 4px solid #fbbf24;
+    }
+
+    .app-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* ปรับแต่ง Scrollbar สำหรับ Sidebar */
+    .overflow-y-auto::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .overflow-y-auto::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+
+<body class="flex min-h-screen relative overflow-x-hidden">
+  <!-- Overlay สำหรับมือถือ (ฉากหลังสีดำจางๆ เวลาเปิดเมนู) -->
+  <div id="sidebar-overlay" onclick="toggleSidebar()"
+    class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden transition-opacity duration-300"></div>
+
+  <!-- Sidebar -->
+  <!-- ปรับแก้: เพิ่ม fixed, z-50 และ logic การเลื่อน (-translate-x-full) สำหรับมือถือ -->
+  <aside id="sidebar"
+    class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col transition-transform duration-300 ease-in-out transform -translate-x-full md:translate-x-0 md:static md:inset-auto md:flex">
+    <div class="p-6 text-2xl font-bold text-white flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-layer-group text-blue-500"></i>
+        <span>CMG HUB</span>
+      </div>
+      <!-- ปุ่มปิดเมนูใน Sidebar (แสดงเฉพาะมือถือ) -->
+      <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white">
+        <i class="fas fa-times text-lg"></i>
+      </button>
+    </div>
+
+    <nav class="flex-1 mt-4 overflow-y-auto pb-4">
+      <button onclick="switchTab('info')" id="btn-info"
+        class="sidebar-item w-full flex items-center px-6 py-4 transition-colors hover:bg-slate-800">
+        <i class="fas fa-circle-info w-6"></i>
+        <span>CMG Information</span>
+      </button>
+      <button onclick="switchTab('planning')" id="btn-planning"
+        class="sidebar-item w-full flex items-center px-6 py-4 transition-colors hover:bg-slate-800">
+        <i class="fas fa-calendar-check w-6"></i>
+        <span>Project Planning</span>
+      </button>
+      <button onclick="switchTab('construction')" id="btn-construction"
+        class="sidebar-item w-full flex items-center px-6 py-4 transition-colors hover:bg-slate-800">
+        <i class="fas fa-helmet-safety w-6"></i>
+        <span>Construction</span>
+      </button>
+      <button onclick="switchTab('bidding')" id="btn-bidding"
+        class="sidebar-item w-full flex items-center px-6 py-4 transition-colors hover:bg-slate-800">
+        <i class="fas fa-gavel w-6"></i>
+        <span>Bidding</span>
+      </button>
+      <button onclick="switchTab('procurement')" id="btn-procurement"
+        class="sidebar-item w-full flex items-center px-6 py-4 transition-colors hover:bg-slate-800">
+        <i class="fas fa-cart-shopping w-6"></i>
+        <span>Procurement</span>
+      </button>
+      <button onclick="switchTab('hr')" id="btn-hr"
+        class="sidebar-item w-full flex items-center px-6 py-4 transition-colors hover:bg-slate-800">
+        <i class="fas fa-handshake w-6"></i>
+        <span>Human Resource</span>
+      </button>
+      <button onclick="switchTab('safety')" id="btn-safety"
+        class="sidebar-item w-full flex items-center px-6 py-4 transition-colors hover:bg-slate-800">
+        <i class="fas fa-shield-halved w-6"></i>
+        <span>Safety Control</span>
+      </button>
+      <button onclick="switchTab('workshop')" id="btn-workshop"
+        class="sidebar-item w-full flex items-center px-6 py-4 transition-colors hover:bg-slate-800">
+        <i class="fas fa-screwdriver-wrench w-6"></i>
+        <span>CMG Workshop</span>
+      </button>
+      <button onclick="switchTab('labour')" id="btn-labour"
+        class="sidebar-item w-full flex items-center px-6 py-4 transition-colors hover:bg-slate-800">
+        <i class="fas fa-house-chimney-user w-6"></i>
+        <span>CMG Labour Camp</span>
+      </button>
+      <button onclick="switchTab('it')" id="btn-it"
+        class="sidebar-item w-full flex items-center px-6 py-4 transition-colors hover:bg-slate-800">
+        <i class="fas fa-laptop-code w-6"></i>
+        <span>CMG IT</span>
+      </button>
+    </nav>
+
+    <div class="p-4 border-t border-slate-800 text-xs text-center text-slate-500">
+      © 2026 CMG Engineering &amp; Construction
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50 transition-all duration-300">
+    <!-- Top Header -->
+    <header class="bg-white border-b h-16 flex items-center justify-between px-6 shadow-sm sticky top-0 z-20">
+      <div class="flex items-center gap-4">
+        <!-- ปุ่ม Hamburger Menu สำหรับมือถือ -->
+        <button onclick="toggleSidebar()"
+          class="md:hidden text-slate-600 hover:text-blue-600 transition-colors p-2 rounded-lg hover:bg-slate-100">
+          <i class="fas fa-bars text-xl"></i>
+        </button>
+        <h2 id="current-title" class="text-xl font-semibold text-slate-800 truncate">
+          CMG Information
+        </h2>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="relative hidden sm:block">
+          <input type="text" placeholder="ค้นหาเว็บแอป..."
+            class="pl-10 pr-4 py-2 bg-slate-100 border-none rounded-full text-sm focus:ring-2 focus:ring-blue-500 transition-all w-64" />
+          <i class="fas fa-search absolute left-3 top-2.5 text-slate-400"></i>
+        </div>
+        <div
+          class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold shrink-0">
+          U
+        </div>
+      </div>
+    </header>
+
+    <!-- Content Area -->
+    <div id="content-area" class="p-6 overflow-y-auto flex-1 scroll-smooth">
+      <div id="apps-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-10">
+        <!-- App Cards will be injected here via JS -->
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ฟังก์ชัน Toggle Sidebar สำหรับมือถือ
+    function toggleSidebar() {
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("sidebar-overlay");
+
+      // สลับคลาสเพื่อแสดง/ซ่อนเมนู
+      sidebar.classList.toggle("-translate-x-full");
+
+      // สลับการแสดง Overlay
+      if (overlay.classList.contains("hidden")) {
+        overlay.classList.remove("hidden");
+      } else {
+        overlay.classList.add("hidden");
+      }
+    }
+
+    const appData = {
+      info: {
+        title: "CMG Information",
+        apps: [
+          {
+            name: "Company Profile",
+            url: "#",
+            icon: "fa-building",
+            color: "bg-blue-500",
+            desc: "ข้อมูลประวัติบริษัทและผลงาน",
+          },
+          {
+            name: "Intranet News",
+            url: "#",
+            icon: "fa-newspaper",
+            color: "bg-blue-400",
+            desc: "ข่าวสารภายในองค์กรล่าสุด",
+          },
+          {
+            name: "Org Chart",
+            url: "#",
+            icon: "fa-sitemap",
+            color: "bg-indigo-500",
+            desc: "แผนผังองค์กรรายแผนก",
+          },
+          {
+            name: "Policy & Manual",
+            url: "#",
+            icon: "fa-book",
+            color: "bg-slate-600",
+            desc: "ระเบียบและคู่มือการปฏิบัติงาน",
+          },
+        ],
+      },
+      planning: {
+        title: "Project Planning",
+        apps: [
+          {
+            name: "Master Schedule",
+            url: "#",
+            icon: "fa-calendar-days",
+            color: "bg-emerald-600",
+            desc: "แผนงานโครงการหลัก (Gantt Chart)",
+          },
+          {
+            name: "Resource Allocation",
+            url: "#",
+            icon: "fa-users-gear",
+            color: "bg-emerald-500",
+            desc: "การจัดสรรกำลังคนและเครื่องจักร",
+          },
+          {
+            name: "Budget Control System",
+            url: "https://43np74.csb.app/",
+            icon: "fa-money-bill-trend-up",
+            color: "bg-green-600",
+            desc: "ระบบติดตามงบประมาณโครงการ",
+          },
+          {
+            name: "Project Progress Tracking",
+            url: "https://5wj2lz.csb.app/",
+            icon: "fa-bars-progress",
+            color: "bg-teal-600",
+            desc: "รายงานความก้าวหน้าของแต่ละ โครงการ",
+          },
+          {
+            name: "Mile Stone Progress",
+            url: "https://4rspvf.csb.app/",
+            icon: "fa-flag-checkered",
+            color: "bg-violet-600",
+            desc: "การติดตามงานแบบ Project Mile Stone Progress",
+          },
+        ],
+      },
+      construction: {
+        title: "Construction",
+        apps: [
+          {
+            name: "Daily Report",
+            url: "#",
+            icon: "fa-file-pen",
+            color: "bg-amber-600",
+            desc: "บันทึกรายงานหน้างานประจำวัน",
+          },
+          {
+            name: "Site Monitoring",
+            url: "#",
+            icon: "fa-video",
+            color: "bg-red-500",
+            desc: "กล้อง CCTV และการตรวจงานหน้างาน",
+          },
+          {
+            name: "Material Log",
+            url: "#",
+            icon: "fa-boxes-stacked",
+            color: "bg-orange-600",
+            desc: "บันทึกการรับเข้า-จ่ายวัสดุหน้างาน",
+          },
+          {
+            name: "Drawing Viewer",
+            url: "#",
+            icon: "fa-drafting-compass",
+            color: "bg-cyan-600",
+            desc: "ระบบดูแบบก่อสร้างออนไลน์",
+          },
+          {
+            name: "Construction Site Daily Report",
+            url: "https://myss6q-3000.csb.app/",
+            icon: "fa-clipboard-list",
+            color: "bg-orange-500",
+            desc: "รายงานความก้าวหน้าประจำวัน ของแต่ละ โครงการ",
+          },
+        ],
+      },
+      bidding: {
+        title: "Bidding",
+        apps: [
+          {
+            name: "CMG Bidding Project",
+            url: "https://k3fs85.csb.app/",
+            icon: "fa-list-check",
+            color: "bg-blue-700",
+            desc: "ระบบติดตามสถานะการประมูลโครงการ",
+          },
+          {
+            name: "AI-Estimation Tool",
+            url: "https://cqvmm7.csb.app/",
+            icon: "fa-calculator",
+            color: "bg-blue-600",
+            desc: "เครื่องมือคำนวณราคากลางและต้นทุน",
+          },
+          {
+            name: "Bid Comparison",
+            url: "#",
+            icon: "fa-code-compare",
+            color: "bg-indigo-600",
+            desc: "ระบบเปรียบเทียบราคาเสนอประมูล",
+          },
+          {
+            name: "E-Bidding Portal",
+            url: "#",
+            icon: "fa-fingerprint",
+            color: "bg-blue-800",
+            desc: "ช่องทางยื่นซองประมูลอิเล็กทรอนิกส์",
+          },
+          {
+            name: "Quick AI Estimate",
+            url: "https://p5lrdx.csb.app/",
+            icon: "fa-robot",
+            color: "bg-cyan-600",
+            desc: "การคำนวณราคา โดยใช้ AI อย่างง่าย",
+          },
+        ],
+      },
+      procurement: {
+        title: "Procurement",
+        apps: [
+          {
+            name: "PR/PO System",
+            url: "https://43np74.csb.app/",
+            icon: "fa-file-invoice-dollar",
+            color: "bg-purple-600",
+            desc: "ระบบขอซื้อและสั่งซื้อสินค้า",
+          },
+          {
+            name: "Vendor List",
+            url: "#",
+            icon: "fa-address-book",
+            color: "bg-purple-500",
+            desc: "รายชื่อผู้ขายและผู้รับเหมาช่วง",
+          },
+          {
+            name: "Price Database",
+            url: "#",
+            icon: "fa-database",
+            color: "bg-pink-600",
+            desc: "ฐานข้อมูลราคากลางวัสดุ",
+          },
+          {
+            name: "CMG Equipment",
+            url: "https://xtg3nm.csb.app/",
+            icon: "fa-truck-front",
+            color: "bg-purple-700",
+            desc: "บริหารการใช้เครื่องจักร และดูแลรักษา",
+          },
+        ],
+      },
+      hr: {
+        title: "Human Resource",
+        apps: [
+          {
+            name: "E-Leave",
+            url: "#",
+            icon: "fa-calendar-minus",
+            color: "bg-rose-500",
+            desc: "ระบบลางานออนไลน์",
+          },
+          {
+            name: "Payslip Online",
+            url: "#",
+            icon: "fa-receipt",
+            color: "bg-rose-600",
+            desc: "ระบบเรียกดูสลิปเงินเดือน",
+          },
+          {
+            name: "Training Portal",
+            url: "#",
+            icon: "fa-graduation-cap",
+            color: "bg-sky-600",
+            desc: "ระบบบันทึกการฝึกอบรม",
+          },
+          {
+            name: "Event Manager",
+            url: "https://3glrw4.csb.app/",
+            icon: "fa-calendar-star",
+            color: "bg-fuchsia-600",
+            desc: "ระบบบริหารจัดการกิจกรรมภายในบริษัท CMG",
+          },
+          {
+            name: "Master Database CMG",
+            url: "https://sn8nh6.csb.app/",
+            icon: "fa-database",
+            color: "bg-slate-600",
+            desc: "ระบบจัดการฐานข้อมูล",
+          },
+          {
+            name: "Work for Success",
+            url: "https://cnpg5q.csb.app/",
+            icon: "fa-trophy",
+            color: "bg-amber-500",
+            desc: "ร่วมด้วยช่วยกันเพื่อความฝันของเรา",
+          },
+          {
+            name: "Performance Evaluation",
+            url: "https://ql6pnw.csb.app/",
+            icon: "fa-chart-line",
+            color: "bg-green-600",
+            desc: "งานประเมินพนักงาน",
+          },
+        ],
+      },
+      safety: {
+        title: "Safety Control",
+        apps: [
+          {
+            name: "Incident Report",
+            url: "#",
+            icon: "fa-triangle-exclamation",
+            color: "bg-yellow-600",
+            desc: "รายงานอุบัติเหตุและเหตุการณ์อันตราย",
+          },
+          {
+            name: "Safety Checklist",
+            url: "#",
+            icon: "fa-list-check",
+            color: "bg-orange-500",
+            desc: "แบบตรวจความปลอดภัยหน้างาน",
+          },
+          {
+            name: "PPE Inventory",
+            url: "#",
+            icon: "fa-hard-hat",
+            color: "bg-yellow-700",
+            desc: "ระบบเบิกจ่ายอุปกรณ์ความปลอดภัย",
+          },
+          {
+            name: "Root Cause Analysis: RCA",
+            url: "https://szx5qx.csb.app/",
+            icon: "fa-magnifying-glass-chart",
+            color: "bg-red-600",
+            desc: "กระบวนการที่ใช้ค้นหา สาเหตุหลัก ของปัญหา",
+          },
+        ],
+      },
+      workshop: {
+        title: "CMG Workshop",
+        apps: [
+          {
+            name: "Machine Maintenance",
+            url: "#",
+            icon: "fa-gears",
+            color: "bg-slate-700",
+            desc: "ระบบแจ้งซ่อมและบำรุงรักษาเครื่องจักร",
+          },
+          {
+            name: "Tools Inventory",
+            url: "#",
+            icon: "fa-toolbox",
+            color: "bg-zinc-600",
+            desc: "ระบบจัดการคลังเครื่องมือและอุปกรณ์",
+          },
+          {
+            name: "Workshop Schedule",
+            url: "#",
+            icon: "fa-clock-rotate-left",
+            color: "bg-blue-900",
+            desc: "ตารางเวลาการใช้งานโรงซ่อม",
+          },
+          {
+            name: "Spare Parts Request",
+            url: "#",
+            icon: "fa-nut-bolt",
+            color: "bg-slate-800",
+            desc: "ระบบเบิกจ่ายอะไหล่สำรอง",
+          },
+        ],
+      },
+      labour: {
+        title: "CMG Labour Camp",
+        apps: [
+          {
+            name: "Resident Registry",
+            url: "#",
+            icon: "fa-id-card-clip",
+            color: "bg-teal-600",
+            desc: "ระบบลงทะเบียนและตรวจสอบรายชื่อผู้พักอาศัย",
+          },
+          {
+            name: "Room Allocation",
+            url: "#",
+            icon: "fa-bed",
+            color: "bg-teal-500",
+            desc: "ระบบจัดสรรห้องพักและสถานะความหนาแน่น",
+          },
+          {
+            name: "Utility Tracking",
+            url: "#",
+            icon: "fa-droplet",
+            color: "bg-cyan-700",
+            desc: "ระบบบันทึกค่าน้ำ-ค่าไฟในแคมป์ที่พัก",
+          },
+          {
+            name: "Camp Inspection",
+            url: "#",
+            icon: "fa-clipboard-check",
+            color: "bg-teal-700",
+            desc: "แบบตรวจประเมินสุขอนามัยและความเรียบร้อย",
+          },
+        ],
+      },
+      it: {
+        title: "CMG Information Technology",
+        apps: [
+          {
+            name: "IT Helpdesk",
+            url: "#",
+            icon: "fa-headset",
+            color: "bg-blue-600",
+            desc: "ระบบแจ้งซ่อมคอมพิวเตอร์และอุปกรณ์ไอที",
+          },
+          {
+            name: "IT Asset",
+            url: "#",
+            icon: "fa-desktop",
+            color: "bg-slate-600",
+            desc: "ระบบจัดการทรัพย์สินและอุปกรณ์ไอที",
+          },
+          {
+            name: "Network Status",
+            url: "#",
+            icon: "fa-server",
+            color: "bg-green-600",
+            desc: "สถานะเครือข่ายและเซิร์ฟเวอร์บริษัท",
+          },
+          {
+            name: "Software Center",
+            url: "#",
+            icon: "fa-download",
+            color: "bg-indigo-600",
+            desc: "ดาวน์โหลดโปรแกรมและไดรเวอร์มาตรฐาน",
+          },
+          {
+            name: "Web App CMG",
+            url: "https://37fx3m.csb.app/",
+            icon: "fa-wand-magic-sparkles",
+            color: "bg-rose-600",
+            desc: "ระบบบริหารจัดการ Web App",
+          },
+        ],
+      },
+    };
+
+    function switchTab(tabKey) {
+      const data = appData[tabKey];
+      if (!data) return;
+
+      const grid = document.getElementById("apps-grid");
+      const title = document.getElementById("current-title");
+
+      title.innerText = data.title;
+
+      // ลบสถานะ active จากทุกปุ่มเมนู
+      document
+        .querySelectorAll(".sidebar-item")
+        .forEach((el) => el.classList.remove("active"));
+      // เพิ่มสถานะ active ให้ปุ่มปัจจุบัน
+      const activeBtn = document.getElementById(`btn-${tabKey}`);
+      if (activeBtn) activeBtn.classList.add("active");
+
+      // แสดงรายการแอป
+      grid.innerHTML = data.apps
+        .map(
+          (app) => `
+                <a href="${app.url}" target="_blank" class="app-card bg-white p-6 rounded-2xl border border-slate-200 transition-all flex flex-col items-center text-center group relative overflow-hidden">
+                    <div class="w-16 h-16 ${app.color} text-white rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform shadow-lg">
+                        <i class="fas ${app.icon}"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 mb-2">${app.name}</h3>
+                    <p class="text-xs text-slate-500 mb-4 h-8 overflow-hidden">${app.desc}</p>
+                    <div class="mt-auto text-blue-600 text-sm font-semibold flex items-center gap-2 group-hover:underline">
+                        เข้าใช้งาน <i class="fas fa-arrow-right text-xs transition-transform group-hover:translate-x-1"></i>
+                    </div>
+                </a>
+            `
+        )
+        .join("");
+
+      // ปิด Sidebar ในมือถือหลังจากกดเลือกเมนู
+      if (window.innerWidth < 768) {
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("sidebar-overlay");
+        if (!sidebar.classList.contains("-translate-x-full")) {
+          sidebar.classList.add("-translate-x-full");
+          overlay.classList.add("hidden");
+        }
+      }
+    }
+
+    window.onload = () => switchTab("info");
+  </script>
+</body>
+
+</html>
