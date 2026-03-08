@@ -1,0 +1,167 @@
+import type { AppData } from '../types/portal';
+
+/** ลำดับเมนู sidebar — ตายตัว ห้ามเปลี่ยน */
+export const MENU_ORDER = [
+  'info',
+  'planning',
+  'construction',
+  'qc',
+  'bidding',
+  'procurement',
+  'hr',
+  'safety',
+  'workshop',
+  'labour',
+  'it',
+  'iso',
+] as const;
+
+export type MenuKey = (typeof MENU_ORDER)[number];
+
+export const MENU_ICONS: Record<MenuKey, string> = {
+  info:         'fa-circle-info',
+  planning:     'fa-calendar-check',
+  construction: 'fa-helmet-safety',
+  qc:           'fa-magnifying-glass-chart',
+  bidding:      'fa-gavel',
+  procurement:  'fa-cart-shopping',
+  hr:           'fa-handshake',
+  safety:       'fa-shield-halved',
+  workshop:     'fa-screwdriver-wrench',
+  labour:       'fa-house-chimney-user',
+  it:           'fa-laptop-code',
+  iso:          'fa-certificate',
+};
+
+export const MENU_LABELS: Record<MenuKey, string> = {
+  info:         'CMG Information',
+  planning:     'Project Planning',
+  construction: 'Construction',
+  qc:           'QC System',
+  bidding:      'Bidding',
+  procurement:  'Procurement',
+  hr:           'Human Resource',
+  safety:       'Safety Control',
+  workshop:     'CMG Workshop',
+  labour:       'CMG Labour Camp',
+  it:           'CMG IT',
+  iso:          'ISO Management',
+};
+
+export const DEFAULT_PORTAL_DATA: AppData = {
+  info: {
+    title: "CMG Information",
+    apps: [
+      { name: "Company Profile",  url: "#", icon: "fa-building",  color: "bg-blue-500",  desc: "ข้อมูลประวัติบริษัทและผลงาน" },
+      { name: "Intranet News",    url: "#", icon: "fa-newspaper", color: "bg-blue-400",  desc: "ข่าวสารภายในองค์กรล่าสุด" },
+      { name: "Org Chart",        url: "#", icon: "fa-sitemap",   color: "bg-indigo-500",desc: "แผนผังองค์กรรายแผนก" },
+      { name: "Policy & Manual",  url: "#", icon: "fa-book",      color: "bg-slate-600", desc: "ระเบียบและคู่มือการปฏิบัติงาน" },
+    ],
+  },
+  planning: {
+    title: "Project Planning",
+    apps: [
+      { name: "Master Schedule",           url: "#",                                         icon: "fa-calendar-days",      color: "bg-emerald-600", desc: "แผนงานโครงการหลัก (Gantt Chart)" },
+      { name: "Resource Allocation",       url: "#",                                         icon: "fa-users-gear",         color: "bg-emerald-500", desc: "การจัดสรรกำลังคนและเครื่องจักร" },
+      { name: "Budget Control System",     url: "https://cmg-budget-control.web.app/",       icon: "fa-money-bill-trend-up",color: "bg-green-600",   desc: "ระบบติดตามงบประมาณโครงการ" },
+      { name: "Project Progress Tracking", url: "https://5wj2lz.csb.app/",                   icon: "fa-bars-progress",      color: "bg-teal-600",    desc: "รายงานความก้าวหน้าของแต่ละโครงการ" },
+      { name: "Mile Stone Progress",       url: "https://milesoneprogress.web.app/",         icon: "fa-flag-checkered",     color: "bg-violet-600",  desc: "การติดตามงานแบบ Project Mile Stone" },
+    ],
+  },
+  construction: {
+    title: "Construction",
+    apps: [
+      { name: "Daily Report",                      url: "#",                                            icon: "fa-file-pen",       color: "bg-amber-600",  desc: "บันทึกรายงานหน้างานประจำวัน" },
+      { name: "Site Monitoring",                   url: "#",                                            icon: "fa-video",          color: "bg-red-500",    desc: "กล้อง CCTV และการตรวจงานหน้างาน" },
+      { name: "Material Log",                      url: "#",                                            icon: "fa-boxes-stacked",  color: "bg-orange-600", desc: "บันทึกการรับเข้า-จ่ายวัสดุหน้างาน" },
+      { name: "Drawing Viewer",                    url: "#",                                            icon: "fa-drafting-compass",color: "bg-cyan-600",  desc: "ระบบดูแบบก่อสร้างออนไลน์" },
+      { name: "Construction Site Daily Report",    url: "https://constructioncontrol-37f21.web.app/",   icon: "fa-clipboard-list", color: "bg-orange-500", desc: "รายงานความก้าวหน้าประจำวัน" },
+    ],
+  },
+  qc: {
+    title: "QC System",
+    apps: [
+      { name: "Quality Checklist",   url: "#", icon: "fa-list-check",          color: "bg-teal-600",    desc: "แบบตรวจสอบคุณภาพงาน" },
+      { name: "NCR Management",      url: "#", icon: "fa-triangle-exclamation", color: "bg-red-500",     desc: "ระบบจัดการรายงานความไม่สอดคล้อง" },
+      { name: "Inspection Report",   url: "#", icon: "fa-file-circle-check",   color: "bg-teal-500",    desc: "รายงานการตรวจสอบคุณภาพ" },
+      { name: "Material Testing",    url: "#", icon: "fa-flask",               color: "bg-cyan-600",    desc: "ผลการทดสอบวัสดุก่อสร้าง" },
+    ],
+  },
+  bidding: {
+    title: "Bidding",
+    apps: [
+      { name: "CMG Bidding Project", url: "https://cmg-bidding-tracker.web.app/",  icon: "fa-list-check",    color: "bg-blue-700",  desc: "ระบบติดตามสถานะการประมูลโครงการ" },
+      { name: "AI-Estimation Tool",  url: "https://bidding-costestimate.web.app/", icon: "fa-calculator",    color: "bg-blue-600",  desc: "เครื่องมือคำนวณราคากลางและต้นทุน" },
+      { name: "Bid Comparison",      url: "#",                                      icon: "fa-code-compare",  color: "bg-indigo-600",desc: "ระบบเปรียบเทียบราคาเสนอประมูล" },
+      { name: "E-Bidding Portal",    url: "#",                                      icon: "fa-fingerprint",   color: "bg-blue-800",  desc: "ช่องทางยื่นซองประมูลอิเล็กทรอนิกส์" },
+      { name: "Quick AI Estimate",   url: "https://p5lrdx.csb.app/",               icon: "fa-robot",         color: "bg-cyan-600",  desc: "การคำนวณราคาโดยใช้ AI อย่างง่าย" },
+    ],
+  },
+  procurement: {
+    title: "Procurement",
+    apps: [
+      { name: "PR/PO System",  url: "https://43np74.csb.app/", icon: "fa-file-invoice-dollar",color: "bg-purple-600", desc: "ระบบขอซื้อและสั่งซื้อสินค้า" },
+      { name: "Vendor List",   url: "#",                        icon: "fa-address-book",       color: "bg-purple-500", desc: "รายชื่อผู้ขายและผู้รับเหมาช่วง" },
+      { name: "Price Database",url: "#",                        icon: "fa-database",           color: "bg-pink-600",   desc: "ฐานข้อมูลราคากลางวัสดุ" },
+      { name: "CMG Equipment", url: "https://xtg3nm.csb.app/", icon: "fa-truck-front",        color: "bg-purple-700", desc: "บริหารการใช้เครื่องจักรและดูแลรักษา" },
+    ],
+  },
+  hr: {
+    title: "Human Resource",
+    apps: [
+      { name: "E-Leave",               url: "#",                           icon: "fa-calendar-minus", color: "bg-rose-500",    desc: "ระบบลางานออนไลน์" },
+      { name: "Payslip Online",        url: "#",                           icon: "fa-receipt",        color: "bg-rose-600",    desc: "ระบบเรียกดูสลิปเงินเดือน" },
+      { name: "Training Portal",       url: "#",                           icon: "fa-graduation-cap", color: "bg-sky-600",     desc: "ระบบบันทึกการฝึกอบรม" },
+      { name: "Event Manager",         url: "https://3glrw4.csb.app/",    icon: "fa-calendar-star",  color: "bg-fuchsia-600", desc: "ระบบบริหารจัดการกิจกรรมภายในบริษัท CMG" },
+      { name: "Master Database CMG",   url: "https://sn8nh6.csb.app/",    icon: "fa-database",       color: "bg-slate-600",   desc: "ระบบจัดการฐานข้อมูล" },
+      { name: "Work for Success",      url: "https://cnpg5q.csb.app/",    icon: "fa-trophy",         color: "bg-amber-500",   desc: "ร่วมด้วยช่วยกันเพื่อความฝันของเรา" },
+      { name: "Performance Evaluation",url: "https://ql6pnw.csb.app/",    icon: "fa-chart-line",     color: "bg-green-600",   desc: "งานประเมินพนักงาน" },
+    ],
+  },
+  safety: {
+    title: "Safety Control",
+    apps: [
+      { name: "Incident Report",         url: "#",                       icon: "fa-triangle-exclamation",  color: "bg-yellow-600", desc: "รายงานอุบัติเหตุและเหตุการณ์อันตราย" },
+      { name: "Safety Checklist",        url: "#",                       icon: "fa-list-check",            color: "bg-orange-500", desc: "แบบตรวจความปลอดภัยหน้างาน" },
+      { name: "PPE Inventory",           url: "#",                       icon: "fa-hard-hat",              color: "bg-yellow-700", desc: "ระบบเบิกจ่ายอุปกรณ์ความปลอดภัย" },
+      { name: "Root Cause Analysis: RCA",url: "https://szx5qx.csb.app/",icon: "fa-magnifying-glass-chart",color: "bg-red-600",    desc: "กระบวนการค้นหาสาเหตุหลักของปัญหา" },
+    ],
+  },
+  workshop: {
+    title: "CMG Workshop",
+    apps: [
+      { name: "Machine Maintenance", url: "#", icon: "fa-gears",             color: "bg-slate-700",  desc: "ระบบแจ้งซ่อมและบำรุงรักษาเครื่องจักร" },
+      { name: "Tools Inventory",     url: "#", icon: "fa-toolbox",           color: "bg-zinc-600",   desc: "ระบบจัดการคลังเครื่องมือและอุปกรณ์" },
+      { name: "Workshop Schedule",   url: "#", icon: "fa-clock-rotate-left", color: "bg-blue-900",   desc: "ตารางเวลาการใช้งานโรงซ่อม" },
+      { name: "Spare Parts Request", url: "#", icon: "fa-nut-bolt",          color: "bg-slate-800",  desc: "ระบบเบิกจ่ายอะไหล่สำรอง" },
+    ],
+  },
+  labour: {
+    title: "CMG Labour Camp",
+    apps: [
+      { name: "Resident Registry", url: "#", icon: "fa-id-card-clip",    color: "bg-teal-600",  desc: "ระบบลงทะเบียนและตรวจสอบรายชื่อผู้พักอาศัย" },
+      { name: "Room Allocation",   url: "#", icon: "fa-bed",             color: "bg-teal-500",  desc: "ระบบจัดสรรห้องพักและสถานะความหนาแน่น" },
+      { name: "Utility Tracking",  url: "#", icon: "fa-droplet",         color: "bg-cyan-700",  desc: "ระบบบันทึกค่าน้ำ-ค่าไฟในแคมป์ที่พัก" },
+      { name: "Camp Inspection",   url: "#", icon: "fa-clipboard-check", color: "bg-teal-700",  desc: "แบบตรวจประเมินสุขอนามัยและความเรียบร้อย" },
+    ],
+  },
+  it: {
+    title: "CMG Information Technology",
+    apps: [
+      { name: "IT Helpdesk",     url: "#",                           icon: "fa-headset",           color: "bg-blue-600",   desc: "ระบบแจ้งซ่อมคอมพิวเตอร์และอุปกรณ์ไอที" },
+      { name: "IT Asset",        url: "#",                           icon: "fa-desktop",           color: "bg-slate-600",  desc: "ระบบจัดการทรัพย์สินและอุปกรณ์ไอที" },
+      { name: "Network Status",  url: "#",                           icon: "fa-server",            color: "bg-green-600",  desc: "สถานะเครือข่ายและเซิร์ฟเวอร์บริษัท" },
+      { name: "Software Center", url: "#",                           icon: "fa-download",          color: "bg-indigo-600", desc: "ดาวน์โหลดโปรแกรมและไดรเวอร์มาตรฐาน" },
+      { name: "Web App CMG",     url: "https://37fx3m.csb.app/",    icon: "fa-wand-magic-sparkles",color: "bg-rose-600",   desc: "ระบบบริหารจัดการ Web App" },
+    ],
+  },
+  iso: {
+    title: "ISO Management",
+    apps: [
+      { name: "ISO Document Control",url: "#", icon: "fa-file-shield",     color: "bg-emerald-700", desc: "ระบบควบคุมเอกสาร ISO" },
+      { name: "Internal Audit",      url: "#", icon: "fa-magnifying-glass", color: "bg-emerald-600", desc: "การตรวจสอบภายในระบบ ISO" },
+      { name: "Corrective Action",   url: "#", icon: "fa-circle-check",    color: "bg-green-600",   desc: "ระบบการดำเนินการแก้ไข (CAR/PAR)" },
+      { name: "Management Review",   url: "#", icon: "fa-chart-bar",       color: "bg-teal-600",    desc: "การทบทวนของฝ่ายบริหาร" },
+    ],
+  },
+};

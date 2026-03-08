@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "cmg-web-portal"
+  },
+  "targets": {
+    "cmg-web-portal": {
+      "hosting": {
+        "site-01": [
+          "cmg-web-portal"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
