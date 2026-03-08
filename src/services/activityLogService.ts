@@ -11,12 +11,11 @@ import {
 } from 'firebase/firestore';
 import { getDb } from '../firebase';
 import type { ActivityLog } from '../types/activityLog';
-
-const LOGS_COLL = 'activityLogs';
+import { PATHS } from './dbPaths';
 
 export async function logActivity(entry: Omit<ActivityLog, 'id' | 'timestamp'>): Promise<void> {
   const db = getDb();
-  await addDoc(collection(db, LOGS_COLL), {
+  await addDoc(collection(db, PATHS.activityLogs), {
     ...entry,
     timestamp: serverTimestamp(),
   });
@@ -25,7 +24,7 @@ export async function logActivity(entry: Omit<ActivityLog, 'id' | 'timestamp'>):
 export async function getActivityLogs(limitCount = 100): Promise<ActivityLog[]> {
   const db = getDb();
   const q = query(
-    collection(db, LOGS_COLL),
+    collection(db, PATHS.activityLogs),
     orderBy('timestamp', 'desc'),
     limit(limitCount)
   );
@@ -39,7 +38,7 @@ export function subscribeActivityLogs(
 ): Unsubscribe {
   const db = getDb();
   const q = query(
-    collection(db, LOGS_COLL),
+    collection(db, PATHS.activityLogs),
     orderBy('timestamp', 'desc'),
     limit(limitCount)
   );

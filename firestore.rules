@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Portal root document ────────────────────────────────────────────────
+    match /CMG-web-portal/root {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ─── users collection ────────────────────────────────────────────────────
+    // อนุญาตให้ authenticated user อ่าน/เขียน user profile ของตัวเอง
+    // และ admin อ่าน/เขียนทุก profile
+    match /CMG-web-portal/root/users/{uid} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ─── appMeta ─────────────────────────────────────────────────────────────
+    // ต้องอ่าน/เขียนได้ตอน register (user authenticated แล้ว)
+    match /CMG-web-portal/root/appMeta/{docId} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ─── projects ────────────────────────────────────────────────────────────
+    match /CMG-web-portal/root/projects/{docId} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ─── activityLogs ────────────────────────────────────────────────────────
+    match /CMG-web-portal/root/activityLogs/{docId} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ─── portalData และ subcollection อื่นๆ ────────────────────────────────
+    match /CMG-web-portal/root/{sub}/{docId} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ─── nested documents (depth > 1) ────────────────────────────────────────
+    match /CMG-web-portal/root/{sub}/{docId}/{rest=**} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null;
+    }
+  }
+}

@@ -22,23 +22,20 @@ import { getFirebaseAuth, getDb } from '../firebase';
 import type { UserProfile, UserRole, UserStatus } from '../types/auth';
 import { logActivity } from './activityLogService';
 import { setSessionExpiry, clearSession } from './sessionService';
+import { PATHS } from './dbPaths';
 
-const USERS_COLL = 'users';
-
-/** ตั้งค่า persistence เป็น local (เก็บข้ามหน้าต่าง) */
 async function initPersistence() {
   const auth = getFirebaseAuth();
   await setPersistence(auth, browserLocalPersistence);
 }
 
-/** สร้าง UserProfile ใน Firestore (รองรับ first-user logic ด้วย transaction) */
 async function createUserProfile(
   fbUser: FirebaseUser,
   extra: { firstName: string; lastName: string; position: string }
 ): Promise<UserProfile> {
   const db = getDb();
-  const metaRef = doc(db, 'appMeta', 'config');
-  const userRef = doc(db, USERS_COLL, fbUser.uid);
+  const metaRef = doc(db, PATHS.appMetaConfig);
+  const userRef = doc(db, PATHS.users, fbUser.uid);
 
   let profile!: UserProfile;
 
@@ -73,26 +70,25 @@ async function createUserProfile(
     }
   });
 
-  await logActivity({
+  // log non-blocking
+  logActivity({
     userId: fbUser.uid,
     userEmail: fbUser.email ?? '',
     userName: `${extra.firstName} ${extra.lastName}`,
     action: 'REGISTER',
     details: `New user registered: ${fbUser.email}`,
-  });
+  }).catch(() => {});
 
   return profile;
 }
 
-/** ดึง UserProfile จาก Firestore */
 export async function getUserProfile(uid: string): Promise<UserProfile> {
   const db = getDb();
-  const snap = await getDoc(doc(db, USERS_COLL, uid));
+  const snap = await getDoc(doc(db, PATHS.users, uid));
   if (!snap.exists()) throw new Error('User profile not found');
   return snap.data() as UserProfile;
 }
 
-/** สมัครสมาชิกด้วย Email/Password */
 export async function registerWithEmail(
   email: string,
   password: string,
@@ -103,31 +99,45 @@ export async function registerWithEmail(
   await initPersistence();
   const auth = getFirebaseAuth();
   const { user } = await createUserWithEmailAndPassword(auth, email, password);
-  await updateProfile(user, { displayName: `${firstName} ${lastName}` });
-  const profile = await createUserProfile(user, { firstName, lastName, position });
+  // ตั้ง session ทันที ก่อนที่ onAuthStateChanged จะ fire
   setSessionExpiry();
-  return profile;
+  await updateProfile(user, { displayName: `${firstName} ${lastName}` });
+  await user.getIdToken(true);
+  try {
+    return await createUserProfile(user, { firstName, lastName, position });
+  } catch (err) {
+    console.error('[registerWithEmail] createUserProfile failed:', err);
+    throw err;
+  }
 }
 
-/** เข้าสู่ระบบด้วย Email/Password */
 export async function loginWithEmail(email: string, password: string): Promise<UserProfile> {
   await initPersistence();
   const auth = getFirebaseAuth();
   const { user } = await signInWithEmailAndPassword(auth, email, password);
+  // ตั้ง session ทันที ก่อนที่ onAuthStateChanged จะ fire
+  setSessionExpiry();
+  await user.getIdToken(true);
 
-  await logActivity({
+  let profile: UserProfile;
+  try {
+    profile = await getUserProfile(user.uid);
+  } catch (err) {
+    console.error('[loginWithEmail] getUserProfile failed:', err);
+    throw err;
+  }
+
+  logActivity({
     userId: user.uid,
     userEmail: user.email ?? '',
     userName: user.displayName ?? user.email ?? '',
     action: 'LOGIN',
     details: `Login via Email: ${user.email}`,
-  });
+  }).catch(() => {});
 
-  setSessionExpiry();
-  return getUserProfile(user.uid);
+  return profile;
 }
 
-/** เข้าสู่ระบบหรือสมัครด้วย Google */
 export async function loginWithGoogle(): Promise<UserProfile> {
   await initPersistence();
   const auth = getFirebaseAuth();
@@ -135,40 +145,52 @@ export async function loginWithGoogle(): Promise<UserProfile> {
   provider.setCustomParameters({ prompt: 'select_account' });
 
   const { user } = await signInWithPopup(auth, provider);
+  // ตั้ง session ทันที ก่อนที่ onAuthStateChanged จะ fire
+  setSessionExpiry();
+  await user.getIdToken(true);
 
   const db = getDb();
-  const userRef = doc(db, USERS_COLL, user.uid);
-  const snap = await getDoc(userRef);
+  const userRef = doc(db, PATHS.users, user.uid);
+
+  let snap;
+  try {
+    snap = await getDoc(userRef);
+  } catch (err) {
+    console.error('[loginWithGoogle] getDoc failed:', err);
+    throw err;
+  }
 
   let profile: UserProfile;
   if (snap.exists()) {
     profile = snap.data() as UserProfile;
-    await logActivity({
+    logActivity({
       userId: user.uid,
       userEmail: user.email ?? '',
       userName: `${profile.firstName} ${profile.lastName}`,
       action: 'LOGIN',
       details: `Login via Google: ${user.email}`,
-    });
+    }).catch(() => {});
   } else {
     const nameParts = (user.displayName ?? '').split(' ');
     const firstName = nameParts[0] ?? '';
     const lastName = nameParts.slice(1).join(' ') ?? '';
-    profile = await createUserProfile(user, { firstName, lastName, position: '' });
+    try {
+      profile = await createUserProfile(user, { firstName, lastName, position: '' });
+    } catch (err) {
+      console.error('[loginWithGoogle] createUserProfile failed:', err);
+      throw err;
+    }
   }
 
-  setSessionExpiry();
   return profile;
 }
 
-/** ออกจากระบบ */
 export async function logout(): Promise<void> {
   const auth = getFirebaseAuth();
   clearSession();
   await signOut(auth);
 }
 
-/** Subscribe ต่อ auth state */
 export function onAuthChange(callback: (user: FirebaseUser | null) => void) {
   return onAuthStateChanged(getFirebaseAuth(), callback);
 }

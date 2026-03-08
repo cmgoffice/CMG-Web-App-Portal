@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { loginWithEmail, loginWithGoogle } from '../services/authService';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { refreshProfile } = useAuth();
+  const { userProfile, loading: authLoading, refreshProfile } = useAuth();
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? '/dashboard';
 
   const [showEmailForm, setShowEmailForm] = useState(true);
@@ -16,25 +16,45 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const handleRedirect = (status: string) => {
-    if (status === 'pending') navigate('/pending', { replace: true });
-    else if (status === 'rejected') setError('บัญชีของคุณถูกปฏิเสธ กรุณาติดต่อผู้ดูแลระบบ');
-    else navigate(from === '/login' || from === '/register' ? '/dashboard' : from, { replace: true });
-  };
+  /**
+   * ตัวเดียวที่จัดการ redirect ทั้งหมด —
+   * จะทำงานเมื่อ authLoading เสร็จแล้ว และ userProfile เปลี่ยน
+   * (รวมถึงหลัง Google / Email login สำเร็จ)
+   */
+  useEffect(() => {
+    if (authLoading) return;   // ยังโหลดอยู่ รอก่อน
+    if (!userProfile) return;  // ยังไม่ได้ login ค้างอยู่หน้านี้
 
+    if (userProfile.status === 'rejected') {
+      setError('บัญชีของคุณถูกปฏิเสธ กรุณาติดต่อผู้ดูแลระบบ');
+      return;
+    }
+
+    if (userProfile.status === 'pending') {
+      navigate('/pending', { replace: true });
+      return;
+    }
+
+    // approved → ไปหน้าที่ตั้งใจจะเข้า หรือ dashboard
+    const destination =
+      !from || from === '/login' || from === '/register' ? '/dashboard' : from;
+    navigate(destination, { replace: true });
+  }, [userProfile, authLoading, navigate, from]);
+
+  /* ─── Google Sign-In ─── */
   const handleGoogleLogin = async () => {
     setError('');
     setGoogleLoading(true);
     try {
-      const profile = await loginWithGoogle();
+      await loginWithGoogle();
+      // force refresh AuthContext เพราะ onAuthStateChanged อาจ fire ก่อน profile ถูกสร้าง
       await refreshProfile();
-      handleRedirect(profile.status);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('popup-closed-by-user') || msg.includes('cancelled-popup-request')) {
-        setError('');
-      } else if (msg.includes('auth/unauthorized-domain')) {
-        setError('Domain ยังไม่ได้รับอนุญาต — กรุณาเพิ่ม domain ใน Firebase Console → Authentication → Settings');
+        /* User closed popup — silent */
+      } else if (msg.includes('unauthorized-domain')) {
+        setError('Domain ยังไม่ได้รับอนุญาต — Firebase Console → Authentication → Authorized domains');
       } else {
         setError('เข้าสู่ระบบด้วย Google ไม่สำเร็จ กรุณาลองใหม่');
       }
@@ -43,14 +63,15 @@ export default function LoginPage() {
     }
   };
 
+  /* ─── Email / Password Sign-In ─── */
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      const profile = await loginWithEmail(email, password);
+      await loginWithEmail(email, password);
+      // force refresh AuthContext หลัง login สำเร็จ
       await refreshProfile();
-      handleRedirect(profile.status);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '';
       if (
@@ -68,6 +89,8 @@ export default function LoginPage() {
     }
   };
 
+  const isWorking = loading || googleLoading;
+
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
@@ -76,7 +99,6 @@ export default function LoginPage() {
         background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%)',
       }}
     >
-      {/* Background decorative circles */}
       <div className="absolute top-[-80px] left-[-80px] w-72 h-72 bg-blue-700/20 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-[-60px] right-[-60px] w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -96,7 +118,7 @@ export default function LoginPage() {
         <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-7">
           <p className="text-center text-sm text-slate-500 mb-6">เข้าสู่ระบบเพื่อใช้งาน</p>
 
-          {/* Error message */}
+          {/* Error */}
           {error && (
             <div className="mb-5 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-start gap-2">
               <i className="fas fa-circle-exclamation shrink-0 mt-0.5"></i>
@@ -104,15 +126,23 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* ─── Google Sign-In (primary) ─── */}
+          {/* Pending notice */}
+          {!authLoading && userProfile?.status === 'pending' && (
+            <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700 flex items-start gap-2">
+              <i className="fas fa-clock shrink-0 mt-0.5"></i>
+              <span>บัญชีของคุณยังรอการอนุมัติจากผู้ดูแลระบบ กรุณารอสักครู่</span>
+            </div>
+          )}
+
+          {/* Google Sign-In */}
           <button
             onClick={handleGoogleLogin}
-            disabled={googleLoading}
+            disabled={isWorking}
             className="w-full py-3.5 bg-white border-2 border-slate-200 hover:border-blue-400 hover:shadow-md disabled:opacity-60 text-slate-700 font-semibold rounded-2xl transition-all flex items-center justify-center gap-3 group"
           >
             {googleLoading ? (
               <>
-                <span className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span>
+                <span className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                 <span className="text-slate-500">กำลังเข้าสู่ระบบ...</span>
               </>
             ) : (
@@ -123,14 +153,12 @@ export default function LoginPage() {
                   <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
                   <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
                 </svg>
-                <span className="group-hover:text-blue-700 transition-colors">
-                  Sign in with Google
-                </span>
+                <span className="group-hover:text-blue-700 transition-colors">Sign in with Google</span>
               </>
             )}
           </button>
 
-          {/* ─── Divider ─── */}
+          {/* Divider */}
           <div className="my-5 flex items-center gap-3">
             <hr className="flex-1 border-slate-200" />
             <button
@@ -142,13 +170,11 @@ export default function LoginPage() {
             <hr className="flex-1 border-slate-200" />
           </div>
 
-          {/* ─── Email/Password (collapsible) ─── */}
+          {/* Email form */}
           {showEmailForm && (
-            <form onSubmit={handleEmailLogin} className="space-y-3 animate-in fade-in">
+            <form onSubmit={handleEmailLogin} className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">
-                  อีเมล
-                </label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">อีเมล</label>
                 <input
                   type="email"
                   value={email}
@@ -159,9 +185,7 @@ export default function LoginPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">
-                  รหัสผ่าน
-                </label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">รหัสผ่าน</label>
                 <input
                   type="password"
                   value={password}
@@ -173,17 +197,17 @@ export default function LoginPage() {
               </div>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={isWorking}
                 className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     กำลังเข้าสู่ระบบ...
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-right-to-bracket"></i>
+                    <i className="fas fa-right-to-bracket" />
                     เข้าสู่ระบบด้วย Email
                   </>
                 )}
@@ -191,7 +215,6 @@ export default function LoginPage() {
             </form>
           )}
 
-          {/* ─── Register link ─── */}
           <p className="mt-5 text-center text-xs text-slate-500">
             ยังไม่มีบัญชี?{' '}
             <Link to="/register" className="text-blue-600 font-semibold hover:underline">

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { registerWithEmail, loginWithGoogle } from '../services/authService';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const { refreshProfile } = useAuth();
 
   const [form, setForm] = useState({
     firstName: '',
@@ -44,8 +46,9 @@ export default function RegisterPage() {
         form.lastName,
         form.position
       );
+      await refreshProfile();
       if (profile.isFirstUser) {
-        navigate('/', { replace: true });
+        navigate('/dashboard', { replace: true });
       } else {
         navigate('/pending', { replace: true });
       }
@@ -66,8 +69,9 @@ export default function RegisterPage() {
     setGoogleLoading(true);
     try {
       const profile = await loginWithGoogle();
+      await refreshProfile();
       if (profile.isFirstUser || profile.status === 'approved') {
-        navigate('/', { replace: true });
+        navigate('/dashboard', { replace: true });
       } else {
         navigate('/pending', { replace: true });
       }

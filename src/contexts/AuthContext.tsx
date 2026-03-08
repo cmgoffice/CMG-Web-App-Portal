@@ -65,15 +65,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthChange(async (user) => {
       if (user) {
-        // ถ้า Firebase บอกว่า login อยู่ แต่ session ของเราหมดแล้ว → force logout
-        if (isSessionExpired()) {
-          clearSession();
-          await logout();
-          setFirebaseUser(null);
-          setUserProfile(null);
-          setLoading(false);
-          return;
-        }
         setFirebaseUser(user);
         setSessionMinutesLeft(getRemainingMinutes());
         await fetchProfile(user.uid);

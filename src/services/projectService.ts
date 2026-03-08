@@ -14,19 +14,18 @@ import {
 } from 'firebase/firestore';
 import { getDb } from '../firebase';
 import type { Project } from '../types/project';
-
-const PROJECTS_COLL = 'projects';
+import { PATHS } from './dbPaths';
 
 export async function getProjects(): Promise<Project[]> {
   const db = getDb();
-  const q = query(collection(db, PROJECTS_COLL), orderBy('name'));
+  const q = query(collection(db, PATHS.projects), orderBy('name'));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Project));
 }
 
 export function subscribeProjects(callback: (projects: Project[]) => void): Unsubscribe {
   const db = getDb();
-  const q = query(collection(db, PROJECTS_COLL), orderBy('name'));
+  const q = query(collection(db, PATHS.projects), orderBy('name'));
   return onSnapshot(q, (snap) => {
     callback(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Project)));
   });
@@ -34,7 +33,7 @@ export function subscribeProjects(callback: (projects: Project[]) => void): Unsu
 
 export async function createProject(name: string, description?: string): Promise<Project> {
   const db = getDb();
-  const ref = await addDoc(collection(db, PROJECTS_COLL), {
+  const ref = await addDoc(collection(db, PATHS.projects), {
     name,
     description: description ?? '',
     isActive: true,
@@ -45,15 +44,14 @@ export async function createProject(name: string, description?: string): Promise
 
 export async function updateProject(id: string, updates: Partial<Omit<Project, 'id'>>): Promise<void> {
   const db = getDb();
-  await updateDoc(doc(db, PROJECTS_COLL, id), updates as UpdateData<Project>);
+  await updateDoc(doc(db, PATHS.projects, id), updates as UpdateData<Project>);
 }
 
 export async function deleteProject(id: string): Promise<void> {
   const db = getDb();
-  await deleteDoc(doc(db, PROJECTS_COLL, id));
+  await deleteDoc(doc(db, PATHS.projects, id));
 }
 
-/** Seed โปรเจกต์ตัวอย่างหากยังไม่มี */
 export async function seedProjectsIfEmpty(): Promise<void> {
   const existing = await getProjects();
   if (existing.length > 0) return;

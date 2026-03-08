@@ -32,6 +32,18 @@ export default function ProtectedRoute({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // firebaseUser มีแล้ว แต่ userProfile ยังโหลดอยู่ — รอก่อน
+  if (!userProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-500 text-sm">กำลังโหลดข้อมูลผู้ใช้...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (requireApproved && userProfile?.status === 'pending') {
     return <Navigate to="/pending" replace />;
   }
