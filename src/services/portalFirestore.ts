@@ -6,8 +6,8 @@ import {
   Unsubscribe,
 } from 'firebase/firestore';
 import { getDb } from '../firebase';
-import type { AppData } from '../types/portal';
-import { DEFAULT_PORTAL_DATA } from '../data/defaultPortalData';
+import type { AppData, TabData } from '../types/portal';
+import { DEFAULT_PORTAL_DATA, MENU_ORDER } from '../data/defaultPortalData';
 
 const COLLECTION_NAME = 'CMG-web-portal';
 const ROOT_DOC_ID = 'root';
@@ -25,6 +25,27 @@ export async function getPortalData(): Promise<AppData | null> {
   return data && Object.keys(data).length > 0 ? data : null;
 }
 
+/** รวมข้อมูลจาก Firestore กับ default — การ์ดที่เพิ่มใน default จะโผล่แม้ข้อมูลใน Firestore ยังเป็นเวอร์ชันเก่า */
+export function mergeWithDefaults(data: AppData | null): AppData {
+  if (!data || Object.keys(data).length === 0) return DEFAULT_PORTAL_DATA;
+  const merged: AppData = {};
+  for (const key of MENU_ORDER) {
+    const defaultSection = DEFAULT_PORTAL_DATA[key] as TabData | undefined;
+    const dbSection = data[key] as TabData | undefined;
+    if (!defaultSection) {
+      if (dbSection) merged[key] = dbSection;
+      continue;
+    }
+    const defaultApps = defaultSection.apps || [];
+    const dbApps = dbSection?.apps || [];
+    const namesInDb = new Set(dbApps.map((a) => a.name));
+    const missingFromDb = defaultApps.filter((a) => !namesInDb.has(a.name));
+    const apps = [...missingFromDb, ...dbApps];
+    merged[key] = { title: dbSection?.title ?? defaultSection.title, apps };
+  }
+  return merged;
+}
+
 /** ฟังการเปลี่ยนแปลงข้อมูล Portal แบบ realtime */
 export function subscribePortalData(callback: (data: AppData | null) => void): Unsubscribe {
   const ref = getPortalDocRef();
@@ -36,7 +57,7 @@ export function subscribePortalData(callback: (data: AppData | null) => void): U
         return;
       }
       const data = snap.data() as AppData;
-      callback(data && Object.keys(data).length > 0 ? data : null);
+      callback(mergeWithDefaults(data && Object.keys(data).length > 0 ? data : null));
     },
     (err) => {
       console.error('Firestore subscribe error:', err);
