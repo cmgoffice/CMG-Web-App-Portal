@@ -40,7 +40,13 @@ export function mergeWithDefaults(data: AppData | null): AppData {
     const dbApps = dbSection?.apps || [];
     const namesInDb = new Set(dbApps.map((a) => a.name));
     const missingFromDb = defaultApps.filter((a) => !namesInDb.has(a.name));
-    const apps = [...missingFromDb, ...dbApps];
+    // การ์ดที่มีใน Firestore ให้ใช้ข้อมูลจาก default ทับ (url, icon, color, desc) เพื่อให้การเปลี่ยน URL ในโค้ดมีผล
+    const defaultByName = new Map(defaultApps.map((a) => [a.name, a]));
+    const mergedDbApps = dbApps.map((dbApp) => {
+      const def = defaultByName.get(dbApp.name);
+      return def ? { ...dbApp, ...def } : dbApp;
+    });
+    const apps = [...missingFromDb, ...mergedDbApps];
     merged[key] = { title: dbSection?.title ?? defaultSection.title, apps };
   }
   return merged;
