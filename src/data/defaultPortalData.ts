@@ -122,7 +122,7 @@ export const DEFAULT_PORTAL_DATA: AppData = {
     title: "Safety Control",
     apps: [
       { name: "CMG Safety Management System", url: "https://cmgsafetydatabase.web.app/", icon: "fa-shield-halved", color: "bg-emerald-600", desc: "ระบบจัดการความปลอดภัย CMG" },
-      { name: "JSA Work Method",             url: "https://wmtjsa-79a05.web.app/",       icon: "fa-clipboard-list", color: "bg-sky-600",   desc: "วิเคราะห์ความปลอดภัยในการทำงาน (JSA)" },
+      { name: "JSA Work Method",             url: "https://jsa-work-method.web.app",    icon: "fa-clipboard-list", color: "bg-sky-600",   desc: "วิเคราะห์ความปลอดภัยในการทำงาน (JSA)" },
       { name: "Incident Report",         url: "#",                       icon: "fa-triangle-exclamation",  color: "bg-yellow-600", desc: "รายงานอุบัติเหตุและเหตุการณ์อันตราย" },
       { name: "Safety Checklist",        url: "#",                       icon: "fa-list-check",            color: "bg-orange-500", desc: "แบบตรวจความปลอดภัยหน้างาน" },
       { name: "PPE Inventory",           url: "#",                       icon: "fa-hard-hat",              color: "bg-yellow-700", desc: "ระบบเบิกจ่ายอุปกรณ์ความปลอดภัย" },
