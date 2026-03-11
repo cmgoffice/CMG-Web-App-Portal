@@ -10,7 +10,7 @@ import PendingApprovalPage from './pages/PendingApprovalPage';
 import AdminPanel from './pages/admin/AdminPanel';
 
 import type { AppData } from './types/portal';
-import { DEFAULT_PORTAL_DATA, MENU_ORDER, MENU_ICONS, MENU_LABELS } from './data/defaultPortalData';
+import { DEFAULT_PORTAL_DATA, MENU_ORDER, MENU_ICONS, MENU_ICON_COLORS, MENU_LABELS } from './data/defaultPortalData';
 import { subscribePortalData, seedPortalDataIfEmpty } from './services/portalFirestore';
 import { logout } from './services/authService';
 import { migrateAllData, checkOldDataExists } from './services/dataMigration';
@@ -103,12 +103,16 @@ function Dashboard() {
                 className={`w-full flex items-center py-2.5 transition-colors group relative
                   ${expanded ? 'px-4 gap-3' : 'justify-center px-0'}
                   ${active
-                    ? 'bg-blue-700 text-white'
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-slate-800 text-slate-100'
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
                   }`}
               >
                 {active && <span className="absolute left-0 top-0 h-full w-1 bg-yellow-400 rounded-r" />}
-                <i className={`fas ${MENU_ICONS[key]} w-5 text-center shrink-0 text-base`}></i>
+                <i
+                  className={`fas ${MENU_ICONS[key]} w-5 text-center shrink-0 text-base ${MENU_ICON_COLORS[key]} ${
+                    active ? 'drop-shadow-[0_0_10px_rgba(255,255,255,0.15)]' : 'group-hover:text-slate-100'
+                  }`}
+                ></i>
                 {expanded && <span className="text-sm truncate">{MENU_LABELS[key]}</span>}
               </button>
             );
@@ -243,15 +247,21 @@ function Dashboard() {
                 href={app.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-white p-6 rounded-2xl border border-slate-200 flex flex-col items-center text-center group hover:-translate-y-1 hover:shadow-xl"
-                style={{ transition: 'all 0.3s ease' }}
+                className="relative bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center text-center group
+                  hover:-translate-y-1 hover:shadow-xl hover:border-slate-300
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                style={{ transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease' }}
               >
-                <div className={`w-16 h-16 ${app.color} text-white rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
+                <div className="absolute right-4 top-4 text-slate-300 group-hover:text-slate-400 transition-colors" aria-hidden="true">
+                  <i className="fas fa-arrow-up-right-from-square text-sm"></i>
+                </div>
+                <div className={`w-16 h-16 ${app.color} text-white rounded-2xl flex items-center justify-center text-2xl mb-4 shadow-lg
+                  ring-1 ring-black/5 group-hover:scale-110 transition-transform`}>
                   <i className={`fas ${app.icon}`}></i>
                 </div>
                 <h3 className="font-bold text-slate-800 mb-2">{app.name}</h3>
-                <p className="text-xs text-slate-500 mb-4 h-8 overflow-hidden">{app.desc}</p>
-                <div className="mt-auto text-blue-600 text-sm font-semibold flex items-center gap-2 group-hover:underline">
+                <p className="text-xs text-slate-500 mb-4 h-10 overflow-hidden leading-relaxed">{app.desc}</p>
+                <div className="mt-auto text-blue-600 text-sm font-semibold flex items-center gap-2 group-hover:underline underline-offset-4">
                   เข้าใช้งาน <i className="fas fa-arrow-right text-xs transition-transform group-hover:translate-x-1"></i>
                 </div>
               </a>
