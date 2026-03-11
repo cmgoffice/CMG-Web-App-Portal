@@ -105,8 +105,18 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-sm px-5">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-700 rounded-3xl shadow-2xl mb-5 ring-4 ring-blue-500/20">
-            <i className="fas fa-layer-group text-white text-3xl"></i>
+          <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-700 rounded-3xl shadow-2xl mb-5 ring-4 ring-blue-500/20 overflow-hidden">
+            <img
+              src="/logo.png"
+              alt="CMG HUB"
+              className="w-20 h-20 object-contain"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-layer-group text-white text-3xl';
+                e.currentTarget.parentElement?.appendChild(icon);
+              }}
+            />
           </div>
           <h1 className="text-4xl font-bold text-white tracking-tight">CMG HUB</h1>
           <p className="text-blue-300 mt-2 text-sm font-medium tracking-wide">

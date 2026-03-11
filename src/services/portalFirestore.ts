@@ -2,11 +2,12 @@ import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
   onSnapshot,
   Unsubscribe,
 } from 'firebase/firestore';
 import { getDb } from '../firebase';
-import type { AppData, TabData } from '../types/portal';
+import type { AppData, TabData, App } from '../types/portal';
 import { DEFAULT_PORTAL_DATA, MENU_ORDER } from '../data/defaultPortalData';
 
 const COLLECTION_NAME = 'CMG-web-portal';
@@ -25,7 +26,11 @@ export async function getPortalData(): Promise<AppData | null> {
   return data && Object.keys(data).length > 0 ? data : null;
 }
 
-/** รวมข้อมูลจาก Firestore กับ default — การ์ดที่เพิ่มใน default จะโผล่แม้ข้อมูลใน Firestore ยังเป็นเวอร์ชันเก่า */
+/**
+ * Merge Firestore data กับ default
+ * - Firestore มี priority (ข้อมูลที่แก้ไขผ่าน Admin จะถูกเก็บไว้)
+ * - การ์ดที่อยู่ใน default แต่ไม่มีใน Firestore จะถูกเพิ่มต่อท้าย (ของใหม่ที่เพิ่มในโค้ด)
+ */
 export function mergeWithDefaults(data: AppData | null): AppData {
   if (!data || Object.keys(data).length === 0) return DEFAULT_PORTAL_DATA;
   const merged: AppData = {};
@@ -39,15 +44,12 @@ export function mergeWithDefaults(data: AppData | null): AppData {
     const defaultApps = defaultSection.apps || [];
     const dbApps = dbSection?.apps || [];
     const namesInDb = new Set(dbApps.map((a) => a.name));
+    // เพิ่มเฉพาะการ์ด default ที่ยังไม่มีใน Firestore (Firestore มี priority)
     const missingFromDb = defaultApps.filter((a) => !namesInDb.has(a.name));
-    // การ์ดที่มีใน Firestore ให้ใช้ข้อมูลจาก default ทับ (url, icon, color, desc) เพื่อให้การเปลี่ยน URL ในโค้ดมีผล
-    const defaultByName = new Map(defaultApps.map((a) => [a.name, a]));
-    const mergedDbApps = dbApps.map((dbApp) => {
-      const def = defaultByName.get(dbApp.name);
-      return def ? { ...dbApp, ...def } : dbApp;
-    });
-    const apps = [...missingFromDb, ...mergedDbApps];
-    merged[key] = { title: dbSection?.title ?? defaultSection.title, apps };
+    merged[key] = {
+      title: dbSection?.title ?? defaultSection.title,
+      apps: [...dbApps, ...missingFromDb],
+    };
   }
   return merged;
 }
@@ -72,11 +74,73 @@ export function subscribePortalData(callback: (data: AppData | null) => void): U
   );
 }
 
-/** สร้างข้อมูล Mock ใน Firebase ถ้า document ยังไม่มี (ทุก User ใช้ข้อมูลชุดเดียวกัน) */
+/** สร้างข้อมูลเริ่มต้นใน Firebase ถ้า document ยังไม่มี */
 export async function seedPortalDataIfEmpty(): Promise<boolean> {
   const existing = await getPortalData();
   if (existing) return false;
   const ref = getPortalDocRef();
   await setDoc(ref, DEFAULT_PORTAL_DATA);
   return true;
+}
+
+// ─── CRUD สำหรับ Admin Portal Manager ────────────────────────────────────────
+
+/**
+ * Firestore ไม่รับค่า undefined — ต้อง strip ออกก่อน save
+ * ใช้ JSON.parse(JSON.stringify(...)) เพื่อ deep-clone และลบ undefined ทั้งหมด
+ */
+function sanitizeApps(apps: App[]): App[] {
+  return JSON.parse(JSON.stringify(apps));
+}
+
+/** บันทึก apps ทั้งหมดของ section ลง Firestore */
+async function saveMenuApps(menuKey: string, apps: App[]): Promise<void> {
+  const ref = getPortalDocRef();
+  const cleanApps = sanitizeApps(apps);
+  try {
+    await updateDoc(ref, { [`${menuKey}.apps`]: cleanApps });
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code;
+    if (code === 'not-found') {
+      // Document ยังไม่มี — สร้างใหม่
+      const section = DEFAULT_PORTAL_DATA[menuKey];
+      await setDoc(
+        ref,
+        { [menuKey]: { title: section?.title ?? menuKey, apps: cleanApps } },
+        { merge: true }
+      );
+    } else {
+      throw err;
+    }
+  }
+}
+
+/** เพิ่มการ์ดใหม่ใน section */
+export async function addAppCard(menuKey: string, newApp: App): Promise<void> {
+  const current = await getPortalData();
+  const merged = mergeWithDefaults(current);
+  const currentApps = merged[menuKey]?.apps ?? [];
+  await saveMenuApps(menuKey, [...currentApps, newApp]);
+}
+
+/** แก้ไขการ์ดตาม index */
+export async function updateAppCard(menuKey: string, index: number, updatedApp: App): Promise<void> {
+  const current = await getPortalData();
+  const merged = mergeWithDefaults(current);
+  const apps = [...(merged[menuKey]?.apps ?? [])];
+  apps[index] = updatedApp;
+  await saveMenuApps(menuKey, apps);
+}
+
+/** ลบการ์ดตาม index */
+export async function deleteAppCard(menuKey: string, index: number): Promise<void> {
+  const current = await getPortalData();
+  const merged = mergeWithDefaults(current);
+  const apps = (merged[menuKey]?.apps ?? []).filter((_, i) => i !== index);
+  await saveMenuApps(menuKey, apps);
+}
+
+/** เรียงลำดับการ์ดใหม่ */
+export async function reorderAppCards(menuKey: string, apps: App[]): Promise<void> {
+  await saveMenuApps(menuKey, apps);
 }

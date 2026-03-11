@@ -6,9 +6,10 @@ import type { UserProfile } from '../../types/auth';
 import type { Project } from '../../types/project';
 import UserTable from './UserTable';
 import ActivityLogs from './ActivityLogs';
+import PortalManager from './PortalManager';
 import { useAuth } from '../../contexts/AuthContext';
 
-type Tab = 'users' | 'logs';
+type Tab = 'users' | 'logs' | 'portal';
 
 export default function AdminPanel() {
   const { userProfile } = useAuth();
@@ -75,15 +76,26 @@ export default function AdminPanel() {
         {/* Tabs + Search */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-4 pt-3 pb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100">
-            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">
+            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5 flex-wrap">
               <TabButton active={activeTab === 'users'} onClick={() => setActiveTab('users')}>
                 <i className="fas fa-users-gear text-xs"></i>
                 User Management
+                {pendingCount > 0 && (
+                  <span className="ml-1 inline-flex items-center justify-center min-w-[16px] h-4 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full">
+                    {pendingCount}
+                  </span>
+                )}
               </TabButton>
               <TabButton active={activeTab === 'logs'} onClick={() => setActiveTab('logs')}>
                 <i className="fas fa-clock-rotate-left text-xs"></i>
                 Log การใช้งาน
               </TabButton>
+              {userProfile?.role === 'SuperAdmin' && (
+                <TabButton active={activeTab === 'portal'} onClick={() => setActiveTab('portal')}>
+                  <i className="fas fa-layer-group text-xs"></i>
+                  จัดการ Cards
+                </TabButton>
+              )}
             </div>
 
             {activeTab === 'users' && (
@@ -109,6 +121,8 @@ export default function AdminPanel() {
               ) : (
                 <UserTable users={users} projects={projects} searchQuery={searchQuery} />
               )
+            ) : activeTab === 'portal' ? (
+              <PortalManager />
             ) : (
               <ActivityLogs />
             )}

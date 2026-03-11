@@ -89,8 +89,18 @@ export default function RegisterPage() {
     >
       <div className="w-full max-w-md px-6">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl shadow-xl mb-4">
-            <i className="fas fa-layer-group text-white text-2xl"></i>
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl shadow-xl mb-4 overflow-hidden">
+            <img
+              src="/logo.png"
+              alt="CMG HUB"
+              className="w-16 h-16 object-contain"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-layer-group text-white text-2xl';
+                e.currentTarget.parentElement?.appendChild(icon);
+              }}
+            />
           </div>
           <h1 className="text-3xl font-bold text-white">CMG HUB</h1>
           <p className="text-slate-400 mt-1 text-sm">สมัครสมาชิกใหม่</p>

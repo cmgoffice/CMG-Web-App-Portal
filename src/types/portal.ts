@@ -4,6 +4,8 @@ export interface App {
   icon: string;
   color: string;
   desc: string;
+  emoji?: string;
+  active?: boolean;
 }
 
 export interface TabData {
