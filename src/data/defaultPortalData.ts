@@ -65,6 +65,7 @@ export const DEFAULT_PORTAL_DATA: AppData = {
       { name: "Resource Allocation",       url: "#",                                         icon: "fa-users-gear",         color: "bg-emerald-500", desc: "การจัดสรรกำลังคนและเครื่องจักร" },
       { name: "Budget Control System",     url: "https://cmg-budget-control.web.app/",       icon: "fa-money-bill-trend-up",color: "bg-green-600",   desc: "ระบบติดตามงบประมาณโครงการ" },
       { name: "CMG Payment System",        url: "https://cmg-payment-system.web.app/",       icon: "fa-credit-card",       color: "bg-emerald-700", desc: "ระบบชำระเงินและการจ่ายเงิน" },
+      { name: "Project Planning-Organize", url: "https://project-planning-organize.web.app/", icon: "fa-folder-tree",       color: "bg-teal-600",    desc: "จัดระเบียบและบริหารแผนงานโครงการ" },
       { name: "Project Progress Tracking", url: "https://5wj2lz.csb.app/",                   icon: "fa-bars-progress",      color: "bg-teal-600",    desc: "รายงานความก้าวหน้าของแต่ละโครงการ" },
       { name: "Mile Stone Progress",       url: "https://milesoneprogress.web.app/",         icon: "fa-flag-checkered",     color: "bg-violet-600",  desc: "การติดตามงานแบบ Project Mile Stone" },
     ],
@@ -92,6 +93,7 @@ export const DEFAULT_PORTAL_DATA: AppData = {
     title: "Bidding",
     apps: [
       { name: "CMG Bidding Project", url: "https://cmg-bidding-tracker.web.app/",  icon: "fa-list-check",    color: "bg-blue-700",  desc: "ระบบติดตามสถานะการประมูลโครงการ" },
+      { name: "Project Planning-Organize", url: "https://project-planning-organize.web.app/", icon: "fa-folder-tree", color: "bg-teal-600", desc: "จัดระเบียบและบริหารแผนงานโครงการ" },
       { name: "AI-Estimation Tool",  url: "https://bidding-costestimate.web.app/", icon: "fa-calculator",    color: "bg-blue-600",  desc: "เครื่องมือคำนวณราคากลางและต้นทุน" },
       { name: "Bid Comparison",      url: "#",                                      icon: "fa-code-compare",  color: "bg-indigo-600",desc: "ระบบเปรียบเทียบราคาเสนอประมูล" },
       { name: "E-Bidding Portal",    url: "#",                                      icon: "fa-fingerprint",   color: "bg-blue-800",  desc: "ช่องทางยื่นซองประมูลอิเล็กทรอนิกส์" },
