@@ -17,7 +17,7 @@ import { migrateAllData, checkOldDataExists } from './services/dataMigration';
 
 /* ─────────────────────────────────────── CMG HUB Dashboard ──── */
 function Dashboard() {
-  const { userProfile, sessionMinutesLeft } = useAuth();
+  const { userProfile } = useAuth();
   const navigate = useNavigate();
   const [appData, setAppData] = useState<AppData>(DEFAULT_PORTAL_DATA);
   const [activeTab, setActiveTab] = useState('info');
@@ -204,21 +204,6 @@ function Dashboard() {
                 className="pl-9 pr-4 py-2 bg-slate-100 border-none rounded-full text-sm focus:ring-2 focus:ring-blue-500 w-52"
               />
               <i className="fas fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
-            </div>
-
-            {/* Session timer */}
-            <div
-              className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
-                sessionMinutesLeft <= 5
-                  ? 'bg-red-50 border-red-200 text-red-600'
-                  : sessionMinutesLeft <= 15
-                  ? 'bg-amber-50 border-amber-200 text-amber-600'
-                  : 'bg-slate-50 border-slate-200 text-slate-500'
-              }`}
-              title="เวลา session ที่เหลือ"
-            >
-              <i className={`fas fa-clock text-xs ${sessionMinutesLeft <= 5 ? 'animate-pulse' : ''}`}></i>
-              <span>{sessionMinutesLeft} นาที</span>
             </div>
 
             {/* User info */}

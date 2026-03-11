@@ -120,7 +120,7 @@ export const DEFAULT_PORTAL_DATA: AppData = {
     apps: [
       { name: "PR/PO System",  url: "https://43np74.csb.app/", icon: "fa-file-invoice-dollar",color: "bg-purple-600", desc: "ระบบขอซื้อและสั่งซื้อสินค้า" },
       { name: "CMG Tool Store Management", url: "https://cmg-tool-store-management.web.app/", icon: "fa-toolbox", color: "bg-purple-700", desc: "ระบบบริหารจัดการคลังเครื่องมือ" },
-      { name: "CMG Petty Cash Management", url: "https://cmg-petty-cash-management.web.app", icon: "fa-money-bill-wave", color: "bg-purple-600", desc: "ระบบบริหารจัดการเงินสดย่อย" },
+      { name: "CMG Petty Cash Management", url: "https://cmg-petty-cash-management.web.app/login", icon: "fa-money-bill-wave", color: "bg-purple-600", desc: "ระบบบริหารจัดการเงินสดย่อย" },
       { name: "Vendor List",   url: "#",                        icon: "fa-address-book",       color: "bg-purple-500", desc: "รายชื่อผู้ขายและผู้รับเหมาช่วง" },
       { name: "Price Database",url: "#",                        icon: "fa-database",           color: "bg-pink-600",   desc: "ฐานข้อมูลราคากลางวัสดุ" },
       { name: "CMG Equipment", url: "https://xtg3nm.csb.app/", icon: "fa-truck-front",        color: "bg-purple-700", desc: "บริหารการใช้เครื่องจักรและดูแลรักษา" },

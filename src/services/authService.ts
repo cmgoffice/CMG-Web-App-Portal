@@ -21,7 +21,6 @@ import {
 import { getFirebaseAuth, getDb } from '../firebase';
 import type { UserProfile, UserRole, UserStatus } from '../types/auth';
 import { logActivity } from './activityLogService';
-import { setSessionExpiry, clearSession } from './sessionService';
 import { PATHS } from './dbPaths';
 
 async function initPersistence() {
@@ -99,8 +98,6 @@ export async function registerWithEmail(
   await initPersistence();
   const auth = getFirebaseAuth();
   const { user } = await createUserWithEmailAndPassword(auth, email, password);
-  // ตั้ง session ทันที ก่อนที่ onAuthStateChanged จะ fire
-  setSessionExpiry();
   await updateProfile(user, { displayName: `${firstName} ${lastName}` });
   await user.getIdToken(true);
   try {
@@ -115,8 +112,6 @@ export async function loginWithEmail(email: string, password: string): Promise<U
   await initPersistence();
   const auth = getFirebaseAuth();
   const { user } = await signInWithEmailAndPassword(auth, email, password);
-  // ตั้ง session ทันที ก่อนที่ onAuthStateChanged จะ fire
-  setSessionExpiry();
   await user.getIdToken(true);
 
   let profile: UserProfile;
@@ -145,8 +140,6 @@ export async function loginWithGoogle(): Promise<UserProfile> {
   provider.setCustomParameters({ prompt: 'select_account' });
 
   const { user } = await signInWithPopup(auth, provider);
-  // ตั้ง session ทันที ก่อนที่ onAuthStateChanged จะ fire
-  setSessionExpiry();
   await user.getIdToken(true);
 
   const db = getDb();
@@ -187,7 +180,6 @@ export async function loginWithGoogle(): Promise<UserProfile> {
 
 export async function logout(): Promise<void> {
   const auth = getFirebaseAuth();
-  clearSession();
   await signOut(auth);
 }
 

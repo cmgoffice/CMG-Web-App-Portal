@@ -7,15 +7,13 @@ import React, {
   ReactNode,
 } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
-import { onAuthChange, getUserProfile, logout } from '../services/authService';
-import { isSessionExpired, getRemainingMinutes, clearSession } from '../services/sessionService';
+import { onAuthChange, getUserProfile } from '../services/authService';
 import type { UserProfile } from '../types/auth';
 
 interface AuthContextValue {
   firebaseUser: FirebaseUser | null;
   userProfile: UserProfile | null;
   loading: boolean;
-  sessionMinutesLeft: number;
   refreshProfile: () => Promise<void>;
 }
 
@@ -23,17 +21,13 @@ const AuthContext = createContext<AuthContextValue>({
   firebaseUser: null,
   userProfile: null,
   loading: true,
-  sessionMinutesLeft: 60,
   refreshProfile: async () => {},
 });
-
-const CHECK_INTERVAL_MS = 60_000; // ตรวจสอบทุก 1 นาที
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sessionMinutesLeft, setSessionMinutesLeft] = useState(60);
 
   const fetchProfile = async (uid: string) => {
     try {
@@ -48,25 +42,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (firebaseUser) await fetchProfile(firebaseUser.uid);
   }, [firebaseUser]);
 
-  /** ตรวจสอบว่า session หมดอายุหรือยัง ถ้าหมดให้ logout */
-  const checkSession = useCallback(async () => {
-    if (!firebaseUser) return;
-    if (isSessionExpired()) {
-      clearSession();
-      await logout();
-      setFirebaseUser(null);
-      setUserProfile(null);
-    } else {
-      setSessionMinutesLeft(getRemainingMinutes());
-    }
-  }, [firebaseUser]);
-
   /* ── Auth state listener ── */
   useEffect(() => {
     const unsubscribe = onAuthChange(async (user) => {
       if (user) {
         setFirebaseUser(user);
-        setSessionMinutesLeft(getRemainingMinutes());
         await fetchProfile(user.uid);
       } else {
         setFirebaseUser(null);
@@ -77,16 +57,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  /* ── ตรวจสอบ session ทุก 1 นาที ── */
-  useEffect(() => {
-    if (!firebaseUser) return;
-    const timer = setInterval(checkSession, CHECK_INTERVAL_MS);
-    return () => clearInterval(timer);
-  }, [firebaseUser, checkSession]);
-
   return (
     <AuthContext.Provider
-      value={{ firebaseUser, userProfile, loading, sessionMinutesLeft, refreshProfile }}
+      value={{ firebaseUser, userProfile, loading, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>
