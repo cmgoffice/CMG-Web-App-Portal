@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { App, AppData } from '../../types/portal';
 import { MENU_ORDER, MENU_LABELS, MENU_ICONS, MENU_ICON_COLORS } from '../../data/defaultPortalData';
 import {
@@ -30,21 +30,25 @@ const COLOR_OPTIONS = [
   { label: 'Zinc',     value: 'bg-zinc-600' },
 ];
 
-// ── EMOJI SUGGESTIONS per menu ────────────────────────────────────────────────
-const EMOJI_SUGGESTIONS: Record<string, string[]> = {
-  info:         ['🏢','📰','🏗️','📋','📌','🗂️','📎','🌐'],
-  planning:     ['📅','💰','💳','📈','📁','🏁','📊','🗓️'],
-  construction: ['🏗️','📝','📹','📦','📐','🔨','⛏️','🧱'],
-  qc:           ['🔬','✅','⚠️','🔍','🧪','📏','🎯','🏅'],
-  bidding:      ['🏆','🤖','⚖️','🖥️','🧮','📋','💼','🔖'],
-  procurement:  ['🧾','🧰','💵','📒','🗄️','🚛','🛒','📦'],
-  hr:           ['👥','🎓','🎉','📊','🏆','🗃️','🗓️','💴'],
-  safety:       ['🦺','🚨','🪖','🔎','📋','⛑️','🚧','🔒'],
-  workshop:     ['⚙️','🧰','🔩','🕐','🔧','🔨','🛠️','⛏️'],
-  labour:       ['🪪','🛏️','💧','🏕️','🏠','👷','🌙','🍽️'],
-  it:           ['🎧','🖥️','🌐','⬇️','✨','💻','🖨️','📡'],
-  iso:          ['🛡️','🔍','✅','📊','📜','🏅','🔐','📋'],
-};
+// ── EMOJI CATEGORIES (งานก่อสร้าง, รายงานเอกสาร, และที่เกี่ยวข้อง) ─────────────
+const EMOJI_CATEGORIES: { title: string; emojis: string[] }[] = [
+  {
+    title: 'งานก่อสร้าง / Construction',
+    emojis: ['🏗️','🔨','⛏️','🧱','📐','🚧','👷','🪖','🦺','⛑️','🔧','🛠️','🔩','⚙️','📦','🚛','🏕️','🪵','🪚','🪓','🚜','🚚','🛒','🧰','🏠','🌉','🪨','⛏️','🔨','🧱','📦'],
+  },
+  {
+    title: 'รายงาน / เอกสาร / Report & Document',
+    emojis: ['📋','📄','📑','📊','📈','📉','📝','📌','📎','🗂️','📁','📂','📅','📆','🗓️','📇','📃','🗃️','📒','📔','📕','📗','📘','📙','📜','🔖','📰','🗞️','📑','📊','📈','📉'],
+  },
+  {
+    title: 'QC / ตรวจสอบ / Safety',
+    emojis: ['🔬','✅','⚠️','🔍','🧪','📏','🎯','🏅','✔️','❌','🔎','🛡️','🔐','🚨','🔒','🦺','⛑️','🚧','🔎'],
+  },
+  {
+    title: 'สำนักงาน / Office & อื่นๆ',
+    emojis: ['🏢','📰','🌐','💼','🖥️','👥','🖨️','📡','💻','📱','🕐','💰','💳','🏆','🤖','⚖️','🎓','🎉','✨','🗂️','📌','📎','🎧','⬇️'],
+  },
+];
 
 // ── Form state ────────────────────────────────────────────────────────────────
 interface FormState {
@@ -72,6 +76,8 @@ export default function PortalManager() {
   const [deleting, setDeleting]         = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [toast, setToast]               = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const unsub = subscribePortalData((data) => setPortalData(data));
@@ -86,9 +92,22 @@ export default function PortalManager() {
   const currentApps = portalData?.[selectedMenu]?.apps ?? [];
 
   // ── open modal for Add ──────────────────────────────────────────────────────
+  // ปิด Emoji picker เมื่อคลิกนอกกล่อง
+  useEffect(() => {
+    if (!emojiPickerOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target as Node)) {
+        setEmojiPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [emojiPickerOpen]);
+
   const openAdd = () => {
     setForm(EMPTY_FORM);
     setEditIndex(null);
+    setEmojiPickerOpen(false);
     setModalOpen(true);
   };
 
@@ -105,6 +124,7 @@ export default function PortalManager() {
       active: app.active ?? false,
     });
     setEditIndex(index);
+    setEmojiPickerOpen(false);
     setModalOpen(true);
   };
 
@@ -347,42 +367,66 @@ export default function PortalManager() {
                 </div>
               </div>
 
-              {/* Emoji */}
-              <div>
+              {/* Emoji — กล่องกดเปิดเลือก (ประหยัดพื้นที่) */}
+              <div ref={emojiPickerRef} className="relative">
                 <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">
-                  Emoji (รูปภาพ) <span className="text-slate-400 font-normal normal-case">— วาง emoji ตรงนี้</span>
+                  Emoji (รูปภาพ)
                 </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={form.emoji}
-                    onChange={(e) => setForm((f) => ({ ...f, emoji: e.target.value }))}
-                    placeholder="เช่น 🏢 📊 🚀"
-                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEmojiPickerOpen((o) => !o)}
+                    className="flex items-center gap-2 min-h-[40px] px-3 py-2 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-left w-full max-w-[200px]"
+                  >
+                    {form.emoji ? (
+                      <span className="text-2xl" role="img">{form.emoji}</span>
+                    ) : (
+                      <span className="text-slate-400 text-sm flex items-center gap-1.5">
+                        <i className="fas fa-face-smile"></i> เลือก Emoji
+                      </span>
+                    )}
+                    <i className={`fas fa-chevron-down text-slate-400 text-xs ml-auto transition-transform ${emojiPickerOpen ? 'rotate-180' : ''}`}></i>
+                  </button>
                   {form.emoji && (
                     <button
+                      type="button"
                       onClick={() => setForm((f) => ({ ...f, emoji: '' }))}
-                      className="px-3 py-2 text-slate-400 hover:text-red-500 hover:bg-red-50 border border-slate-300 rounded-lg transition-colors text-xs"
+                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 border border-slate-300 rounded-lg transition-colors"
                       title="ล้าง emoji"
                     >
-                      <i className="fas fa-times"></i>
+                      <i className="fas fa-times text-xs"></i>
                     </button>
                   )}
                 </div>
-                {/* Emoji suggestions */}
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {(EMOJI_SUGGESTIONS[selectedMenu] ?? []).map((em) => (
-                    <button
-                      key={em}
-                      onClick={() => setForm((f) => ({ ...f, emoji: em }))}
-                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-lg hover:bg-blue-50 transition-colors border
-                        ${form.emoji === em ? 'border-blue-400 bg-blue-50' : 'border-transparent'}`}
-                    >
-                      {em}
-                    </button>
-                  ))}
-                </div>
+
+                {/* Popover เลือก Emoji */}
+                {emojiPickerOpen && (
+                  <div className="absolute left-0 top-full mt-1 z-50 w-[320px] max-h-[280px] overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl py-2">
+                    {EMOJI_CATEGORIES.map((cat) => (
+                      <div key={cat.title} className="mb-3 last:mb-0">
+                        <p className="px-3 py-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wide sticky top-0 bg-slate-50 border-b border-slate-100">
+                          {cat.title}
+                        </p>
+                        <div className="flex flex-wrap gap-1 p-2">
+                          {cat.emojis.map((em) => (
+                            <button
+                              key={em}
+                              type="button"
+                              onClick={() => {
+                                setForm((f) => ({ ...f, emoji: em }));
+                                setEmojiPickerOpen(false);
+                              }}
+                              className={`w-8 h-8 flex items-center justify-center rounded-lg text-lg hover:bg-blue-50 transition-colors border
+                                ${form.emoji === em ? 'border-blue-400 bg-blue-50' : 'border-transparent'}`}
+                            >
+                              {em}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Name */}

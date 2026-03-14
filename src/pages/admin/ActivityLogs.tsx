@@ -8,6 +8,8 @@ const ACTION_STYLES: Record<string, string> = {
   LOGOUT: 'bg-slate-100 text-slate-600',
   UPDATE_USER: 'bg-amber-100 text-amber-700',
   DELETE_USER: 'bg-red-100 text-red-700',
+  VIEW_MENU: 'bg-violet-100 text-violet-700',
+  CLICK_CARD: 'bg-sky-100 text-sky-700',
 };
 
 function formatTimestamp(ts: ActivityLog['timestamp']): string {

@@ -13,17 +13,24 @@ import type { AppData } from './types/portal';
 import { DEFAULT_PORTAL_DATA, MENU_ORDER, MENU_ICONS, MENU_ICON_COLORS, MENU_LABELS } from './data/defaultPortalData';
 import { subscribePortalData, seedPortalDataIfEmpty } from './services/portalFirestore';
 import { logout } from './services/authService';
+import { logActivity } from './services/activityLogService';
 import { migrateAllData, checkOldDataExists } from './services/dataMigration';
 import { subscribeAllUsers } from './services/userService';
 
 /* ─────────────────────────────────────── CMG HUB Dashboard ──── */
 function Dashboard() {
-  const { userProfile } = useAuth();
+  const { userProfile, firebaseUser } = useAuth();
+  const profilePhotoUrl = userProfile?.photoURL ?? firebaseUser?.photoURL ?? null;
+  const [profilePhotoError, setProfilePhotoError] = useState(false);
   const navigate = useNavigate();
   const [appData, setAppData] = useState<AppData>(DEFAULT_PORTAL_DATA);
   const [activeTab, setActiveTab] = useState('info');
   const [dbError, setDbError] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    setProfilePhotoError(false);
+  }, [profilePhotoUrl]);
 
   // Desktop: collapsed by default, จำสถานะใน localStorage
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -31,8 +38,15 @@ function Dashboard() {
     return saved === null ? true : saved === 'true';
   });
 
-  // Mobile: overlay sidebar
-  const [mobileOpen, setMobileOpen] = useState(false);
+  // Mobile view: sidebar เป็นแถบ icon-only ตลอด
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
@@ -74,7 +88,16 @@ function Dashboard() {
 
   const switchTab = (key: string) => {
     setActiveTab(key);
-    setMobileOpen(false);
+    if (userProfile) {
+      const menuTitle = appData[key]?.title ?? (MENU_LABELS as Record<string, string>)[key] ?? key;
+      logActivity({
+        userId: userProfile.uid,
+        userEmail: userProfile.email,
+        userName: `${userProfile.firstName ?? ''} ${userProfile.lastName ?? ''}`.trim() || userProfile.email,
+        action: 'VIEW_MENU',
+        details: `เข้าเมนู: ${menuTitle}`,
+      }).catch(() => {});
+    }
   };
 
   // Subscribe pending users count (เฉพาะ admin เท่านั้น)
@@ -92,7 +115,8 @@ function Dashboard() {
 
   /* ── Sidebar content (shared between desktop & mobile) ── */
   const SidebarContent = ({ forceExpand = false }: { forceExpand?: boolean }) => {
-    const expanded = forceExpand || !collapsed;
+    // มือถือ: โชว์แค่ icon; เดสก์ท็อป: ตาม collapsed
+    const expanded = !isMobile && (forceExpand || !collapsed);
     const showBadge = isAdmin && pendingCount > 0;
     return (
       <>
@@ -189,40 +213,19 @@ function Dashboard() {
         </div>
       )}
 
-      {/* Mobile overlay backdrop */}
-      {mobileOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setMobileOpen(false)} />
-      )}
-
-      {/* Mobile sidebar (overlay, always expanded) */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 flex flex-col transition-transform duration-300 ease-in-out
-        ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} md:hidden`}>
-        <div className="absolute top-3 right-3">
-          <button onClick={() => setMobileOpen(false)} className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800">
-            <i className="fas fa-times"></i>
-          </button>
-        </div>
-        <SidebarContent forceExpand />
-      </aside>
-
-      {/* Desktop sidebar (collapsible) */}
-      <aside className={`hidden md:flex flex-col bg-slate-900 text-slate-300 transition-all duration-300 ease-in-out shrink-0
-        ${collapsed ? 'w-16' : 'w-64'}`}>
+      {/* Sidebar: มือถือ = แถบซ้ายโชว์แต่ icon, เดสก์ท็อป = ย่อ/ขยายได้ */}
+      <aside className={`flex flex-col bg-slate-900 text-slate-300 shrink-0
+        fixed md:relative inset-y-0 left-0 z-30
+        w-14 md:transition-all md:duration-300 md:ease-in-out
+        ${isMobile ? 'w-14' : collapsed ? 'md:w-16' : 'md:w-64'}`}>
         <SidebarContent />
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50">
+      {/* Main — มือถือมี padding ซ้ายให้พ้นแถบ sidebar */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50 pl-14 md:pl-0">
         <header className="bg-white border-b h-16 flex items-center justify-between px-4 shadow-sm sticky top-0 z-20">
           <div className="flex items-center gap-2">
-            {/* Mobile hamburger */}
-            <button
-              onClick={() => setMobileOpen(true)}
-              className="md:hidden text-slate-600 hover:text-blue-600 p-2 rounded-lg hover:bg-slate-100"
-            >
-              <i className="fas fa-bars text-lg"></i>
-            </button>
-            {/* Desktop toggle */}
+            {/* Desktop toggle sidebar */}
             <button
               onClick={toggleCollapsed}
               title={collapsed ? 'ขยาย Sidebar' : 'ย่อ Sidebar'}
@@ -248,8 +251,19 @@ function Dashboard() {
               <p className="text-xs font-semibold text-slate-700 leading-none">{userProfile?.firstName} {userProfile?.lastName}</p>
               <p className="text-xs text-slate-400 mt-0.5">{userProfile?.role}</p>
             </div>
-            <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0">
-              {userProfile?.firstName?.[0]?.toUpperCase() ?? 'U'}
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 overflow-hidden bg-blue-600">
+              {profilePhotoUrl && !profilePhotoError ? (
+                <img
+                  src={profilePhotoUrl}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  onError={() => setProfilePhotoError(true)}
+                />
+              ) : (
+                <span className="w-full h-full flex items-center justify-center bg-blue-600">
+                  {userProfile?.firstName?.[0]?.toUpperCase() ?? 'U'}
+                </span>
+              )}
             </div>
             <button
               onClick={handleLogout}
@@ -261,46 +275,58 @@ function Dashboard() {
           </div>
         </header>
 
-        <div className="p-4 overflow-y-auto flex-1">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 pb-8">
+        <div className="p-3 md:p-4 overflow-y-auto flex-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 md:gap-3 pb-8">
             {currentData?.apps.map((app, index) => (
               <a
                 key={index}
                 href={app.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="relative bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center group
+                onClick={() => {
+                  if (userProfile) {
+                    const menuTitle = currentData?.title ?? (MENU_LABELS as Record<string, string>)[activeTab] ?? activeTab;
+                    logActivity({
+                      userId: userProfile.uid,
+                      userEmail: userProfile.email,
+                      userName: `${userProfile.firstName ?? ''} ${userProfile.lastName ?? ''}`.trim() || userProfile.email,
+                      action: 'CLICK_CARD',
+                      details: `กด Card: ${app.name} | URL: ${app.url} | เมนู: ${menuTitle}`,
+                    }).catch(() => {});
+                  }
+                }}
+                className="relative bg-white p-2.5 md:p-4 rounded-lg md:rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center group
                   hover:-translate-y-1 hover:shadow-lg hover:border-blue-200
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
                 style={{ transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease' }}
               >
                 {/* Active badge — มุมบนซ้าย */}
                 {app.active && (
-                  <span className="absolute left-2 top-2 flex items-center justify-center w-5 h-5 bg-emerald-500 rounded-full shadow-sm"
+                  <span className="absolute left-1 top-1 md:left-2 md:top-2 flex items-center justify-center w-4 h-4 md:w-5 md:h-5 bg-emerald-500 rounded-full shadow-sm"
                     title="พร้อมใช้งาน">
-                    <i className="fas fa-check text-white text-[9px]"></i>
+                    <i className="fas fa-check text-white text-[8px] md:text-[9px]"></i>
                   </span>
                 )}
 
-                <div className="absolute right-2.5 top-2.5 text-slate-200 group-hover:text-slate-400 transition-colors" aria-hidden="true">
-                  <i className="fas fa-arrow-up-right-from-square text-xs"></i>
+                <div className="absolute right-1.5 top-1.5 md:right-2.5 md:top-2.5 text-slate-200 group-hover:text-slate-400 transition-colors" aria-hidden="true">
+                  <i className="fas fa-arrow-up-right-from-square text-[10px] md:text-xs"></i>
                 </div>
 
-                {/* Emoji icon */}
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-3xl mb-3
+                {/* Emoji icon — mini บนมือถือ */}
+                <div className="w-9 h-9 md:w-12 md:h-12 rounded-lg md:rounded-xl flex items-center justify-center text-xl md:text-3xl mb-1.5 md:mb-3
                   bg-slate-50 group-hover:scale-110 transition-transform select-none">
                   {app.emoji
                     ? <span role="img" aria-label={app.name}>{app.emoji}</span>
-                    : <span className={`w-10 h-10 ${app.color} text-white rounded-lg flex items-center justify-center text-lg`}>
+                    : <span className={`w-8 h-8 md:w-10 md:h-10 ${app.color} text-white rounded-md md:rounded-lg flex items-center justify-center text-sm md:text-lg`}>
                         <i className={`fas ${app.icon}`}></i>
                       </span>
                   }
                 </div>
 
-                <h3 className="font-semibold text-slate-800 text-xs leading-tight mb-1.5 line-clamp-2">{app.name}</h3>
-                <p className="text-xs text-slate-400 leading-snug line-clamp-2 mb-3">{app.desc}</p>
-                <div className="mt-auto text-blue-500 text-xs font-semibold flex items-center gap-1 group-hover:text-blue-700 transition-colors">
-                  เข้าใช้งาน <i className="fas fa-arrow-right text-xs transition-transform group-hover:translate-x-0.5"></i>
+                <h3 className="font-semibold text-slate-800 text-[11px] md:text-xs leading-tight mb-0.5 md:mb-1.5 line-clamp-2">{app.name}</h3>
+                <p className="text-[10px] md:text-xs text-slate-400 leading-snug line-clamp-1 md:line-clamp-2 mb-1.5 md:mb-3">{app.desc}</p>
+                <div className="mt-auto text-blue-500 text-[10px] md:text-xs font-semibold flex items-center gap-0.5 md:gap-1 group-hover:text-blue-700 transition-colors">
+                  เข้าใช้งาน <i className="fas fa-arrow-right text-[10px] md:text-xs transition-transform group-hover:translate-x-0.5"></i>
                 </div>
               </a>
             ))}

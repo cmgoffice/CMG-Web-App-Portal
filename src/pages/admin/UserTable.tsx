@@ -125,8 +125,28 @@ export default function UserTable({ users, projects, searchQuery }: Props) {
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold shrink-0">
-                        {u.firstName?.[0]?.toUpperCase() ?? 'U'}
+                      <div className="w-7 h-7 rounded-full overflow-hidden bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold shrink-0 relative">
+                        {u.photoURL ? (
+                          <>
+                            <img
+                              src={u.photoURL}
+                              alt=""
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const fallback = e.currentTarget.nextElementSibling;
+                                if (fallback) (fallback as HTMLElement).classList.remove('hidden');
+                              }}
+                            />
+                            <span className="hidden absolute inset-0 bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                              {u.firstName?.[0]?.toUpperCase() ?? 'U'}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="w-full h-full flex items-center justify-center">
+                            {u.firstName?.[0]?.toUpperCase() ?? 'U'}
+                          </span>
+                        )}
                       </div>
                       <div>
                         <p className="font-medium text-slate-800 text-xs">{u.firstName} {u.lastName}</p>
