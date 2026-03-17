@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { subscribeAllUsers } from '../../services/userService';
 import { subscribeProjects, seedProjectsIfEmpty } from '../../services/projectService';
 import type { UserProfile } from '../../types/auth';
@@ -14,7 +14,9 @@ type Tab = 'users' | 'logs' | 'portal';
 export default function AdminPanel() {
   const { userProfile } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<Tab>('users');
+  const location = useLocation();
+  const initialTab = (new URLSearchParams(location.search).get('tab') as Tab | null) ?? 'users';
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);

@@ -169,7 +169,7 @@ function Dashboard() {
 
         {/* Admin button */}
         {isAdmin && (
-          <div className={`px-3 mb-3 ${!expanded ? 'flex justify-center' : ''}`}>
+          <div className={`px-3 mb-1 ${!expanded ? 'flex justify-center' : ''}`}>
             <button
               onClick={() => navigate('/admin')}
               title={!expanded ? `Admin Panel${showBadge ? ` (${pendingCount} รอดำเนินการ)` : ''}` : undefined}
@@ -191,6 +191,21 @@ function Dashboard() {
                   </span>
                 )
               )}
+            </button>
+          </div>
+        )}
+
+        {/* จัดการ Card button (SuperAdmin only) */}
+        {userProfile?.role === 'SuperAdmin' && (
+          <div className={`px-3 mb-3 ${!expanded ? 'flex justify-center' : ''}`}>
+            <button
+              onClick={() => navigate('/admin?tab=portal')}
+              title={!expanded ? 'จัดการ Cards' : undefined}
+              className={`bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl text-sm font-semibold flex items-center gap-2 transition-colors
+                ${expanded ? 'w-full px-4 py-2.5' : 'w-10 h-10 justify-center'}`}
+            >
+              <i className="fas fa-layer-group shrink-0 text-yellow-400"></i>
+              {expanded && <span className="flex-1 text-left">จัดการ Cards</span>}
             </button>
           </div>
         )}

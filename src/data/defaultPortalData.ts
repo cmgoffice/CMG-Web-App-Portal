@@ -14,6 +14,8 @@ export const MENU_ORDER = [
   'labour',
   'it',
   'iso',
+  'accounting',
+  'finance',
 ] as const;
 
 export type MenuKey = (typeof MENU_ORDER)[number];
@@ -31,6 +33,8 @@ export const MENU_ICONS: Record<MenuKey, string> = {
   labour:       'fa-house-chimney-user',
   it:           'fa-laptop-code',
   iso:          'fa-certificate',
+  accounting:   'fa-coins',
+  finance:      'fa-chart-line',
 };
 
 export const MENU_ICON_COLORS: Record<MenuKey, string> = {
@@ -46,6 +50,8 @@ export const MENU_ICON_COLORS: Record<MenuKey, string> = {
   labour:       'text-cyan-400',
   it:           'text-blue-400',
   iso:          'text-emerald-300',
+  accounting:   'text-yellow-400',
+  finance:      'text-lime-400',
 };
 
 export const MENU_LABELS: Record<MenuKey, string> = {
@@ -61,6 +67,8 @@ export const MENU_LABELS: Record<MenuKey, string> = {
   labour:       'CMG Labour Camp',
   it:           'CMG IT',
   iso:          'ISO Management',
+  accounting:   'Accounting',
+  finance:      'Finance',
 };
 
 export const DEFAULT_PORTAL_DATA: AppData = {
@@ -186,5 +194,13 @@ export const DEFAULT_PORTAL_DATA: AppData = {
       { name: "Corrective Action",    url: "#", icon: "fa-circle-check",    color: "bg-green-600",   desc: "ระบบการดำเนินการแก้ไข (CAR/PAR)",    emoji: "✅" },
       { name: "Management Review",    url: "#", icon: "fa-chart-bar",       color: "bg-teal-600",    desc: "การทบทวนของฝ่ายบริหาร",              emoji: "📊" },
     ],
+  },
+  accounting: {
+    title: "Accounting",
+    apps: [],
+  },
+  finance: {
+    title: "Finance",
+    apps: [],
   },
 };
