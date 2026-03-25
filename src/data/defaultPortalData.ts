@@ -16,6 +16,7 @@ export const MENU_ORDER = [
   'iso',
   'accounting',
   'finance',
+  'engineering',
 ] as const;
 
 export type MenuKey = (typeof MENU_ORDER)[number];
@@ -35,6 +36,7 @@ export const MENU_ICONS: Record<MenuKey, string> = {
   iso:          'fa-certificate',
   accounting:   'fa-coins',
   finance:      'fa-chart-line',
+  engineering:  'fa-drafting-compass',
 };
 
 export const MENU_ICON_COLORS: Record<MenuKey, string> = {
@@ -52,6 +54,7 @@ export const MENU_ICON_COLORS: Record<MenuKey, string> = {
   iso:          'text-emerald-300',
   accounting:   'text-yellow-400',
   finance:      'text-lime-400',
+  engineering:  'text-orange-300',
 };
 
 export const MENU_LABELS: Record<MenuKey, string> = {
@@ -69,6 +72,7 @@ export const MENU_LABELS: Record<MenuKey, string> = {
   iso:          'ISO Management',
   accounting:   'Accounting',
   finance:      'Finance',
+  engineering:  'Engineering',
 };
 
 export const DEFAULT_PORTAL_DATA: AppData = {
@@ -201,6 +205,10 @@ export const DEFAULT_PORTAL_DATA: AppData = {
   },
   finance: {
     title: "Finance",
+    apps: [],
+  },
+  engineering: {
+    title: "Engineering",
     apps: [],
   },
 };
