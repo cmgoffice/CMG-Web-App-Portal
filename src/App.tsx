@@ -87,6 +87,22 @@ function Dashboard() {
   };
 
   const switchTab = (key: string) => {
+    // Handle external URL for CMG Internal Project
+    if (key === 'internal-project') {
+      window.open('https://cmg-project-mm.web.app/login', '_blank');
+      if (userProfile) {
+        const menuTitle = (MENU_LABELS as Record<string, string>)[key] ?? key;
+        logActivity({
+          userId: userProfile.uid,
+          userEmail: userProfile.email,
+          userName: `${userProfile.firstName ?? ''} ${userProfile.lastName ?? ''}`.trim() || userProfile.email,
+          action: 'VIEW_MENU',
+          details: `เข้าเมนู: ${menuTitle} (External Link)`,
+        }).catch(() => {});
+      }
+      return;
+    }
+
     setActiveTab(key);
     if (userProfile) {
       const menuTitle = appData[key]?.title ?? (MENU_LABELS as Record<string, string>)[key] ?? key;
