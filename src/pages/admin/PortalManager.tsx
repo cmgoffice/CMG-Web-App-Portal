@@ -139,7 +139,7 @@ export default function PortalManager() {
       const emojiVal = form.emoji.trim();
       const appData: App = {
         name:   form.name.trim(),
-        url:    form.url.trim(),
+        url:    form.url.trim() === '#' || /^https?:\/\//i.test(form.url.trim()) ? form.url.trim() : `https://${form.url.trim()}`,
         desc:   form.desc.trim(),
         color:  form.color,
         icon:   form.icon || 'fa-globe',

@@ -37,18 +37,14 @@ export function mergeWithDefaults(data: AppData | null): AppData {
   for (const key of MENU_ORDER) {
     const defaultSection = DEFAULT_PORTAL_DATA[key] as TabData | undefined;
     const dbSection = data[key] as TabData | undefined;
-    if (!defaultSection) {
-      if (dbSection) merged[key] = dbSection;
+    if (!dbSection) {
+      if (defaultSection) merged[key] = defaultSection;
       continue;
     }
-    const defaultApps = defaultSection.apps || [];
-    const dbApps = dbSection?.apps || [];
-    const namesInDb = new Set(dbApps.map((a) => a.name));
-    // เพิ่มเฉพาะการ์ด default ที่ยังไม่มีใน Firestore (Firestore มี priority)
-    const missingFromDb = defaultApps.filter((a) => !namesInDb.has(a.name));
+    // ใช้ข้อมูลจาก Firestore เป็นหลัก ไม่ต้องดึงการ์ดที่ถูกลบไปแล้วกลับมาจาก default
     merged[key] = {
-      title: dbSection?.title ?? defaultSection.title,
-      apps: [...dbApps, ...missingFromDb],
+      title: dbSection.title ?? defaultSection?.title ?? key,
+      apps: dbSection.apps || [],
     };
   }
   return merged;

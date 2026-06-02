@@ -311,7 +311,7 @@ function Dashboard() {
             {currentData?.apps.map((app, index) => (
               <a
                 key={index}
-                href={app.url}
+                href={app.url === '#' || /^https?:\/\//i.test(app.url || '') ? app.url : `https://${app.url}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => {
