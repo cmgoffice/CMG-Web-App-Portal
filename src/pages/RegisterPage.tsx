@@ -5,7 +5,18 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { refreshProfile } = useAuth();
+  const { refreshProfile, loading: authLoading, userProfile } = useAuth();
+
+  React.useEffect(() => {
+    if (authLoading) return;
+    if (userProfile) {
+      if (userProfile.status === 'pending') {
+        navigate('/pending', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
+    }
+  }, [userProfile, authLoading, navigate]);
 
   const [form, setForm] = useState({
     firstName: '',
@@ -81,6 +92,33 @@ export default function RegisterPage() {
       setGoogleLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center"
+        style={{
+          background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%)',
+          fontFamily: 'Sarabun, sans-serif',
+        }}
+      >
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center shadow-xl mb-2 overflow-hidden">
+            <img src="/logo.png" alt="CMG HUB" className="w-14 h-14 object-contain"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-layer-group text-white text-2xl';
+                e.currentTarget.parentElement?.appendChild(icon);
+              }}
+            />
+          </div>
+          <div className="w-8 h-8 border-3 border-blue-400 border-t-transparent rounded-full animate-spin" style={{ borderWidth: 3 }} />
+          <p className="text-blue-200 text-sm">กำลังตรวจสอบข้อมูลบัญชี...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
