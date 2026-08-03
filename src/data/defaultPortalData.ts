@@ -220,3 +220,46 @@ export const DEFAULT_PORTAL_DATA: AppData = {
     apps: [],
   },
 };
+
+/** ดึงลำดับเมนูทั้งหมด (รวมเมนูตั้งต้นและเมนูที่สร้างใหม่) */
+export function getMenuOrder(data: AppData | null): string[] {
+  if (data && Array.isArray(data._menuOrder) && data._menuOrder.length > 0) {
+    const savedOrder = data._menuOrder;
+    const dataKeys = Object.keys(data).filter((k) => k !== '_menuOrder');
+    const missingKeys = dataKeys.filter((k) => !savedOrder.includes(k));
+    return [...savedOrder, ...missingKeys];
+  }
+  if (data) {
+    const dataKeys = Object.keys(data).filter((k) => k !== '_menuOrder');
+    const combined = [...MENU_ORDER, ...dataKeys.filter((k) => !(MENU_ORDER as readonly string[]).includes(k))];
+    return combined;
+  }
+  return [...MENU_ORDER];
+}
+
+/** ดึง Icon ของเมนู */
+export function getMenuIcon(key: string, data: AppData | null): string {
+  const section = data?.[key] as any;
+  if (section && typeof section === 'object' && section.icon) {
+    return section.icon;
+  }
+  return (MENU_ICONS as Record<string, string>)[key] ?? 'fa-layer-group';
+}
+
+/** ดึงสี Icon ของเมนู */
+export function getMenuColor(key: string, data: AppData | null): string {
+  const section = data?.[key] as any;
+  if (section && typeof section === 'object' && section.color) {
+    return section.color;
+  }
+  return (MENU_ICON_COLORS as Record<string, string>)[key] ?? 'text-blue-400';
+}
+
+/** ดึงชื่อภาษาไทย/อังกฤษ ของเมนู */
+export function getMenuLabel(key: string, data: AppData | null): string {
+  const section = data?.[key] as any;
+  if (section && typeof section === 'object' && section.title) {
+    return section.title;
+  }
+  return (MENU_LABELS as Record<string, string>)[key] ?? key;
+}

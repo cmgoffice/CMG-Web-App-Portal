@@ -9,8 +9,8 @@ import RegisterPage from './pages/RegisterPage';
 import PendingApprovalPage from './pages/PendingApprovalPage';
 import AdminPanel from './pages/admin/AdminPanel';
 
-import type { AppData } from './types/portal';
-import { DEFAULT_PORTAL_DATA, MENU_ORDER, MENU_ICONS, MENU_ICON_COLORS, MENU_LABELS } from './data/defaultPortalData';
+import type { AppData, TabData } from './types/portal';
+import { DEFAULT_PORTAL_DATA, getMenuOrder, getMenuIcon, getMenuColor, getMenuLabel } from './data/defaultPortalData';
 import { subscribePortalData, seedPortalDataIfEmpty } from './services/portalFirestore';
 import { logout } from './services/authService';
 import { logActivity } from './services/activityLogService';
@@ -91,7 +91,7 @@ function Dashboard() {
     if (key === 'internal-project') {
       window.open('https://cmg-project-mm.web.app/login', '_blank');
       if (userProfile) {
-        const menuTitle = (MENU_LABELS as Record<string, string>)[key] ?? key;
+        const menuTitle = getMenuLabel(key, appData);
         logActivity({
           userId: userProfile.uid,
           userEmail: userProfile.email,
@@ -105,7 +105,7 @@ function Dashboard() {
 
     setActiveTab(key);
     if (userProfile) {
-      const menuTitle = appData[key]?.title ?? (MENU_LABELS as Record<string, string>)[key] ?? key;
+      const menuTitle = getMenuLabel(key, appData);
       logActivity({
         userId: userProfile.uid,
         userEmail: userProfile.email,
@@ -127,13 +127,15 @@ function Dashboard() {
     return unsub;
   }, [isAdmin]);
 
-  const currentData = appData[activeTab];
+  const currentData = appData[activeTab] as TabData | undefined;
 
   /* ── Sidebar content (shared between desktop & mobile) ── */
   const SidebarContent = ({ forceExpand = false }: { forceExpand?: boolean }) => {
     // มือถือ: โชว์แค่ icon; เดสก์ท็อป: ตาม collapsed
     const expanded = !isMobile && (forceExpand || !collapsed);
     const showBadge = isAdmin && pendingCount > 0;
+    const menuKeys = getMenuOrder(appData).filter((key) => appData[key]);
+
     return (
       <>
         {/* Logo */}
@@ -157,13 +159,17 @@ function Dashboard() {
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-3">
-          {MENU_ORDER.filter((key) => appData[key]).map((key) => {
+          {menuKeys.map((key) => {
             const active = activeTab === key;
+            const label = getMenuLabel(key, appData);
+            const icon = getMenuIcon(key, appData);
+            const color = getMenuColor(key, appData);
+
             return (
               <button
                 key={key}
                 onClick={() => switchTab(key)}
-                title={!expanded ? MENU_LABELS[key] : undefined}
+                title={!expanded ? label : undefined}
                 className={`w-full flex items-center py-2.5 transition-colors group relative
                   ${expanded ? 'px-4 gap-3' : 'justify-center px-0'}
                   ${active
@@ -173,11 +179,11 @@ function Dashboard() {
               >
                 {active && <span className="absolute left-0 top-0 h-full w-1 bg-yellow-400 rounded-r" />}
                 <i
-                  className={`fas ${MENU_ICONS[key]} w-5 text-center shrink-0 text-base ${MENU_ICON_COLORS[key]} ${
+                  className={`fas ${icon} w-5 text-center shrink-0 text-base ${color} ${
                     active ? 'drop-shadow-[0_0_10px_rgba(255,255,255,0.15)]' : 'group-hover:text-slate-100'
                   }`}
                 ></i>
-                {expanded && <span className="text-sm truncate">{MENU_LABELS[key]}</span>}
+                {expanded && <span className="text-sm truncate">{label}</span>}
               </button>
             );
           })}
@@ -316,7 +322,7 @@ function Dashboard() {
                 rel="noopener noreferrer"
                 onClick={() => {
                   if (userProfile) {
-                    const menuTitle = currentData?.title ?? (MENU_LABELS as Record<string, string>)[activeTab] ?? activeTab;
+                    const menuTitle = currentData?.title ?? getMenuLabel(activeTab, appData);
                     logActivity({
                       userId: userProfile.uid,
                       userEmail: userProfile.email,

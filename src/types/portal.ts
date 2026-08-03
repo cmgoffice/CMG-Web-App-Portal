@@ -11,8 +11,12 @@ export interface App {
 export interface TabData {
   title: string;
   apps: App[];
+  icon?: string;
+  color?: string;
+  isCustom?: boolean;
 }
 
 export interface AppData {
-  [key: string]: TabData;
+  _menuOrder?: string[];
+  [key: string]: TabData | string[] | undefined;
 }
